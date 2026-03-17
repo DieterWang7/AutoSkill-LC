@@ -90,19 +90,45 @@ This release focuses on OpenClaw adapter stability. The core architecture is hos
 ## Directory Structure
 
 ```
-workspace/
-├── autoskill-lc/              # Data directory
-│   ├── signals/               # Conversation signals (*.json)
-│   ├── inventory/             # Skill inventory (skills.json)
-│   ├── reports/               # Governance reports
-│   └── skills/                # Skill storage
-├── plugins/autoskill-lc-openclaw/
-│   └── install-manifest.json  # Installation manifest
-├── extensions/autoskill-lc-openclaw-adapter/
-│   ├── index.js               # Adapter entrypoint
-│   └── openclaw.plugin.json   # Plugin descriptor
-└── openclaw.json              # OpenClaw configuration
+OpenClaw production host
+├── /opt/openclaw/vendor/autoskill-lc/      # AutoSkill-LC runtime code + venv
+├── /root/.openclaw/extensions/
+│   └── autoskill-lc-openclaw/              # OpenClaw plugin entrypoint
+├── /root/.openclaw/autoskill-lc/           # AutoSkill-LC data directory
+│   ├── signals/                            # Conversation signals (*.json)
+│   ├── inventory/                          # Skill inventory (skills.json)
+│   └── reports/                            # Governance reports
+└── /root/.openclaw/openclaw.json           # OpenClaw configuration
+
+Codex host
+├── ~/.codex/autoskill-lc/                  # AutoSkill-LC data directory
+│   ├── signals/
+│   ├── inventory/
+│   ├── reports/
+│   └── install-manifest.json
+└── ~/.codex/skills/autoskill-lc-governance/
+    └── SKILL.md
 ```
+
+## Host Path Conventions
+
+OpenClaw and Codex use different filesystem roles:
+
+- OpenClaw runtime code belongs outside the OpenClaw data directory.
+- OpenClaw plugin/config/state stays under `~/.openclaw`.
+- Codex adapter data stays under `~/.codex/autoskill-lc`.
+
+Current recommended production layout for OpenClaw:
+
+- runtime: `/opt/openclaw/vendor/autoskill-lc`
+- plugin entrypoint: `/root/.openclaw/extensions/autoskill-lc-openclaw`
+- governance data: `/root/.openclaw/autoskill-lc`
+- config: `/root/.openclaw/openclaw.json`
+
+Current recommended layout for Codex:
+
+- data: `~/.codex/autoskill-lc`
+- optional skill: `~/.codex/skills/autoskill-lc-governance`
 
 ## Signal File Format
 

@@ -15,6 +15,33 @@ This aligns with public Codex issue discussions that reference session files
 under `~/.codex/sessions/...jsonl` and command history under
 `CODEX_HOME/history.jsonl`.
 
+## Codex directory layout
+
+AutoSkill-LC uses the Codex home directly. In a standard local install, that
+means:
+
+```text
+~/.codex/
+├── sessions/**/*.jsonl
+├── history.jsonl
+├── autoskill-lc/
+│   ├── signals/
+│   ├── inventory/
+│   ├── reports/
+│   └── install-manifest.json
+└── skills/autoskill-lc-governance/SKILL.md
+```
+
+So in Codex, the relevant base directory is:
+
+```text
+~/.codex
+```
+
+The adapter does not create a separate `/opt/...` runtime location for Codex.
+It installs into the Python environment you use, then stores its data under
+`CODEX_HOME`.
+
 ## Commands
 
 Install AutoSkill-LC into a local Codex home:

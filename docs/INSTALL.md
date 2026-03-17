@@ -1,5 +1,16 @@
 # Install
 
+## Host path conventions
+
+Use these directory roles consistently:
+
+- OpenClaw runtime code: `/opt/openclaw/vendor/autoskill-lc`
+- OpenClaw plugin entrypoint: `~/.openclaw/extensions/autoskill-lc-openclaw`
+- OpenClaw data: `~/.openclaw/autoskill-lc`
+- OpenClaw config: `~/.openclaw/openclaw.json`
+- Codex data: `~/.codex/autoskill-lc`
+- Codex optional skill: `~/.codex/skills/autoskill-lc-governance`
+
 ## Local bootstrap
 
 ```bash
@@ -9,6 +20,40 @@ autoskill-lc openclaw-install --workspace-dir ~/.openclaw
 
 Then restart the OpenClaw Gateway so plugin discovery and `plugins.entries`
 changes are applied.
+
+## OpenClaw production layout
+
+For a production OpenClaw host, do not leave the AutoSkill-LC runtime under
+`/root`.
+
+Recommended layout:
+
+```text
+/opt/openclaw/vendor/autoskill-lc              runtime code + virtualenv
+~/.openclaw/extensions/autoskill-lc-openclaw   OpenClaw plugin entrypoint
+~/.openclaw/autoskill-lc                       governance data
+~/.openclaw/openclaw.json                      plugin config and trust
+```
+
+The plugin config should point `pythonCommand` at the runtime venv, for
+example:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "autoskill-lc-openclaw": {
+        "enabled": true,
+        "config": {
+          "pythonCommand": "/opt/openclaw/vendor/autoskill-lc/.venv/bin/python",
+          "workspaceDir": "/root/.openclaw",
+          "reportName": "latest-governance-report.json"
+        }
+      }
+    }
+  }
+}
+```
 
 ## What installation creates
 
@@ -24,6 +69,17 @@ changes are applied.
 - `autoskill-lc/inventory` - Skill inventory (skills.json)
 - `autoskill-lc/reports` - Governance reports
 - `autoskill-lc/skills` - Skill storage
+
+## Codex layout
+
+For Codex, the adapter writes only into the Codex home:
+
+```text
+~/.codex/autoskill-lc/
+~/.codex/skills/autoskill-lc-governance/
+```
+
+It does not require a separate runtime directory inside `~/.codex`.
 
 ## Signal File Format
 

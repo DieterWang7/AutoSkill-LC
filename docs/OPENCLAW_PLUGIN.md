@@ -48,6 +48,42 @@ The plugin wrapper is intentionally thin.
 - slash commands call the Python runtime with `python -m autoskill_lc.cli`
 - governance state still lives under `~/.openclaw/autoskill-lc/`
 
+## Production path layout
+
+Recommended production layout on an OpenClaw server:
+
+```text
+/opt/openclaw/vendor/autoskill-lc              runtime code + venv
+/root/.openclaw/extensions/autoskill-lc-openclaw   plugin entrypoint
+/root/.openclaw/autoskill-lc                   governance data
+/root/.openclaw/openclaw.json                  plugin config
+```
+
+The important separation is:
+
+- runtime code should live under `/opt/openclaw/vendor/...`
+- OpenClaw plugin/data/config should stay under `~/.openclaw`
+
+The plugin executes by reading `plugins.entries.autoskill-lc-openclaw.config`,
+especially:
+
+- `pythonCommand`
+- `workspaceDir`
+- `reportName`
+
+Example:
+
+```json
+{
+  "enabled": true,
+  "config": {
+    "pythonCommand": "/opt/openclaw/vendor/autoskill-lc/.venv/bin/python",
+    "workspaceDir": "/root/.openclaw",
+    "reportName": "latest-governance-report.json"
+  }
+}
+```
+
 ## Commands exposed by the plugin
 
 - `/autoskill-status`
