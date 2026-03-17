@@ -1,54 +1,190 @@
 # AutoSkill-LC
 
-AutoSkill-LC is a loosely-coupled self-evolving skill governance engine.
+AutoSkill-LC = Loosely-Coupled, Self-Evolving, Host-Agnostic Skill Governance Engine.
 
-The project starts from the AutoSkill lineage, but shifts the center of gravity
-from a single host integration to a host-agnostic core. OpenClaw is the first
-official adapter. Claude, ChatGPT, Gemini, and future coding agents can be
-supported through separate adapters without rewriting the governance engine.
+OpenClaw is the first official adapter. Claude, ChatGPT, Gemini adapters are planned.
 
-## Design goals
+## What This Does
 
-- keep host systems untouched and removable
-- run maintenance only when scheduled
-- evolve skills from conversation evidence
-- emit explainable recommendations for add, upgrade, deprecate, and remove
-- make rollback a first-class workflow
+AutoSkill-LC watches conversation patterns between users and AI hosts, then recommends:
+- **ADD** new skills when recurring uncovered patterns emerge
+- **UPGRADE** skills when corrections indicate evolution is needed
+- **DEPRECATE** skills that have been inactive for too long
+- **REMOVE** deprecated skills past their removal window
 
-## Current scope
+Key principles:
+- Host systems remain untouched and removable
+- Runs maintenance only when scheduled (no resident resource usage)
+- All recommendations include confidence scores and evidence
+- Rollback is a first-class workflow
 
-The bootstrap in this repository provides:
-
-- a host-neutral governance engine
-- adapter contracts for host integrations
-- runtime contracts for scheduled maintenance
-- an OpenClaw adapter bootstrap with install and uninstall flows
-- tests for the first recommendation rules
-
-## Planned adapters
-
-- OpenClaw
-- Claude
-- ChatGPT
-- Gemini
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
-[docs/ROADMAP.md](docs/ROADMAP.md) for the first implementation roadmap.
-
-## Bootstrap commands
+## Quick Start
 
 ```bash
+# Install in development mode
 python -m pip install -e .[dev]
+
+# Install OpenClaw adapter
 autoskill-lc openclaw-install --workspace-dir ~/.openclaw
+
+# Run maintenance (reads signals, analyzes, writes report)
 autoskill-lc openclaw-maintain --workspace-dir ~/.openclaw
-autoskill-lc openclaw-uninstall --workspace-dir ~/.openclaw
+
+# Uninstall when done
+autoskill-lc openclaw-uninstall --workspace-dir ~/.openclaw --purge-data
 ```
 
-OpenClaw plugin discovery and `plugins.*` config changes require a Gateway
-restart after install or uninstall.
+## OpenClaw Cron Integration
 
-More details:
+Add to your crontab for daily maintenance:
 
-- [docs/ADAPTERS.md](docs/ADAPTERS.md)
-- [docs/INSTALL.md](docs/INSTALL.md)
-- [docs/UNINSTALL.md](docs/UNINSTALL.md)
+```cron
+# Daily at 2 AM
+0 2 * * * /usr/bin/autoskill-lc openclaw-maintain --workspace-dir ~/.openclaw
+```
+
+Or use systemd timer for more control over wake-only execution.
+
+## Project Status
+
+**Current: OpenClaw-first MVP**
+
+This release focuses on OpenClaw adapter stability. The core architecture is host-agnostic - Claude, ChatGPT, and Gemini adapters will follow using the same governance engine.
+
+| Adapter | Status |
+|---------|--------|
+| OpenClaw | Available |
+| Claude | Planned |
+| ChatGPT | Planned |
+| Gemini | Planned |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Host Systems                             │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
+│  │OpenClaw │  │ Claude  │  │ ChatGPT │  │ Gemini  │        │
+│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘        │
+└───────┼────────────┼────────────┼────────────┼─────────────┘
+        │            │            │            │
+        └────────────┴──────┬─────┴────────────┘
+                            │
+              ┌─────────────▼─────────────┐
+              │   Host Adapters           │
+              │   (OpenClawAdapter, etc)  │
+              └─────────────┬─────────────┘
+                            │
+              ┌─────────────▼─────────────┐
+              │   Governance Engine       │
+              │   (Host-agnostic core)    │
+              └─────────────┬─────────────┘
+                            │
+              ┌─────────────▼─────────────┐
+              │   Recommendations         │
+              │   (ADD/UPGRADE/DEPRECATE/ │
+              │    REMOVE)                │
+              └───────────────────────────┘
+```
+
+## Directory Structure
+
+```
+workspace/
+├── autoskill-lc/              # Data directory
+│   ├── signals/               # Conversation signals (*.json)
+│   ├── inventory/             # Skill inventory (skills.json)
+│   ├── reports/               # Governance reports
+│   └── skills/                # Skill storage
+├── plugins/autoskill-lc-openclaw/
+│   └── install-manifest.json  # Installation manifest
+├── extensions/autoskill-lc-openclaw-adapter/
+│   ├── index.js               # Adapter entrypoint
+│   └── openclaw.plugin.json   # Plugin descriptor
+└── openclaw.json              # OpenClaw configuration
+```
+
+## Signal File Format
+
+Place JSON files in `autoskill-lc/signals/`:
+
+```json
+[
+  {
+    "topic": "git release workflow",
+    "evidence": ["user asked for release notes 3 times"],
+    "confidence": 0.91,
+    "observed_runs": 3,
+    "existing_skill_id": null,
+    "corrections": 0,
+    "explicit_uninstall_request": false,
+    "superseded_by": null,
+    "last_observed_at": "2026-03-18T10:00:00Z"
+  }
+]
+```
+
+## Skill Inventory Format
+
+Place in `autoskill-lc/inventory/skills.json`:
+
+```json
+[
+  {
+    "skill_id": "skill-git-release",
+    "title": "Git Release Notes",
+    "version": "1.0.0",
+    "usage_count": 15,
+    "last_used_at": "2026-03-10T08:30:00Z",
+    "status": "active"
+  }
+]
+```
+
+## Report Output
+
+Reports are written to `autoskill-lc/reports/latest-governance-report.json`:
+
+```json
+{
+  "host": "openclaw",
+  "generatedAt": "2026-03-18T14:00:00+00:00",
+  "recommendationCount": 2,
+  "recommendations": [
+    {
+      "action": "add",
+      "topic": "git release workflow",
+      "confidence": 0.91,
+      "rationale": "A recurring pattern without coverage suggests a new skill.",
+      "skill_id": null,
+      "replacement_skill_id": null,
+      "evidence": ["user asked for release notes 3 times"]
+    }
+  ]
+}
+```
+
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture
+- [docs/ROADMAP.md](docs/ROADMAP.md) - Development roadmap
+- [docs/INSTALL.md](docs/INSTALL.md) - Detailed installation
+- [docs/UNINSTALL.md](docs/UNINSTALL.md) - Safe uninstallation
+- [docs/ADAPTERS.md](docs/ADAPTERS.md) - Adapter development guide
+
+## Development
+
+```bash
+# Run tests
+python -m pytest -q
+
+# Run with coverage
+python -m pytest --cov=autoskill_lc
+
+# Type checking
+python -m mypy src/autoskill_lc
+```
+
+## License
+
+MIT License - see LICENSE file for details.

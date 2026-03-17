@@ -87,7 +87,20 @@ class OpenClawInstallOptions:
 
 
 def install_openclaw_adapter(options: OpenClawInstallOptions) -> None:
+    """Install the OpenClaw adapter to the specified workspace.
+    
+    Handles idempotent installation - safe to run multiple times.
+    """
     paths = options.paths
+    
+    # Check for existing installation
+    if paths.manifest_path.exists():
+        existing = _load_json_dict(paths.manifest_path)
+        if existing.get("pluginId") == PLUGIN_ID:
+            # Already installed, update config only
+            _upsert_openclaw_config(options)
+            return
+    
     _ensure_directories(paths)
     _write_adapter_files(paths)
     _write_manifest(options)
@@ -99,12 +112,39 @@ def uninstall_openclaw_adapter(
     *,
     purge_data: bool = False,
 ) -> None:
+    """Uninstall the OpenClaw adapter from the specified workspace.
+    
+    Handles idempotent uninstallation - safe to run multiple times.
+    Uses manifest to ensure only AutoSkill-LC managed files are removed.
+    """
     paths = options.paths
+    
+    # Load manifest if exists to verify what we installed
+    manifest = _load_json_dict(paths.manifest_path)
+    if manifest and manifest.get("pluginId") != PLUGIN_ID:
+        # Not our installation, don't touch it
+        return
+    
     _remove_openclaw_config(paths)
-    _safe_rmtree(paths.adapter_dir)
-    _safe_rmtree(paths.plugin_dir)
+    
+    # Only remove directories that match our manifest
+    if manifest:
+        plugin_dir = Path(manifest.get("pluginDir", paths.plugin_dir))
+        adapter_dir = Path(manifest.get("adapterDir", paths.adapter_dir))
+        _safe_rmtree(plugin_dir)
+        _safe_rmtree(adapter_dir)
+    else:
+        # Fallback: use default paths
+        _safe_rmtree(paths.plugin_dir)
+        _safe_rmtree(paths.adapter_dir)
+    
     if purge_data:
-        _safe_rmtree(paths.data_dir)
+        data_dir = Path(manifest.get("dataDir", paths.data_dir)) if manifest else paths.data_dir
+        _safe_rmtree(data_dir)
+    
+    # Clean up manifest last
+    if paths.manifest_path.exists():
+        paths.manifest_path.unlink(missing_ok=True)
 
 
 def _ensure_directories(paths: OpenClawPaths) -> None:
@@ -177,6 +217,9 @@ def _upsert_openclaw_config(options: OpenClawInstallOptions) -> None:
 
 
 def _remove_openclaw_config(paths: OpenClawPaths) -> None:
+    if not paths.config_path.exists():
+        return
+        
     root = _load_json_dict(paths.config_path)
     plugins = root.get("plugins")
     if not isinstance(plugins, dict):
@@ -186,7 +229,8 @@ def _remove_openclaw_config(paths: OpenClawPaths) -> None:
     if isinstance(load, dict):
         load_paths = load.get("paths")
         if isinstance(load_paths, list):
-            load["paths"] = [item for item in load_paths if str(item) != str(paths.adapter_dir)]
+            adapter_path_str = str(paths.adapter_dir)
+            load["paths"] = [item for item in load_paths if str(item) != adapter_path_str]
 
     entries = plugins.get("entries")
     if isinstance(entries, dict):

@@ -14,7 +14,13 @@ from autoskill_lc.openclaw.reporting import write_governance_report
 def _load_json(path: Path, default: object) -> object:
     if not path.exists():
         return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        content = path.read_text(encoding="utf-8").strip()
+        if not content:
+            return default
+        return json.loads(content)
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        return default
 
 
 @dataclass
@@ -49,20 +55,24 @@ class OpenClawAdapter:
             for raw in payload:
                 if not isinstance(raw, dict):
                     continue
-                results.append(
-                    ConversationSignal(
-                        topic=str(raw.get("topic", "")).strip(),
-                        evidence=_coerce_evidence(raw.get("evidence")),
-                        confidence=float(raw.get("confidence", 0.0)),
-                        observed_runs=int(raw.get("observed_runs", 1)),
-                        existing_skill_id=_optional_str(raw.get("existing_skill_id")),
-                        corrections=int(raw.get("corrections", 0)),
-                        explicit_uninstall_request=bool(
-                            raw.get("explicit_uninstall_request", False)
-                        ),
-                        superseded_by=_optional_str(raw.get("superseded_by")),
+                try:
+                    results.append(
+                        ConversationSignal(
+                            topic=str(raw.get("topic", "")).strip(),
+                            evidence=_coerce_evidence(raw.get("evidence")),
+                            confidence=float(raw.get("confidence", 0.0)),
+                            observed_runs=int(raw.get("observed_runs", 1)),
+                            existing_skill_id=_optional_str(raw.get("existing_skill_id")),
+                            corrections=int(raw.get("corrections", 0)),
+                            explicit_uninstall_request=bool(
+                                raw.get("explicit_uninstall_request", False)
+                            ),
+                            superseded_by=_optional_str(raw.get("superseded_by")),
+                            last_observed_at=_optional_datetime(raw.get("last_observed_at")),
+                        )
                     )
-                )
+                except (ValueError, TypeError):
+                    continue
         return [item for item in results if item.topic]
 
     def list_skills(self) -> list[SkillRecord]:
@@ -74,21 +84,24 @@ class OpenClawAdapter:
         for raw in payload:
             if not isinstance(raw, dict):
                 continue
-            skill_id = _optional_str(raw.get("skill_id"))
-            title = _optional_str(raw.get("title"))
-            version = _optional_str(raw.get("version"))
-            if not skill_id or not title or not version:
-                continue
-            results.append(
-                SkillRecord(
-                    skill_id=skill_id,
-                    title=title,
-                    version=version,
-                    usage_count=int(raw.get("usage_count", 0)),
-                    last_used_at=_optional_datetime(raw.get("last_used_at")),
-                    status=str(raw.get("status", "active")),
+            try:
+                skill_id = _optional_str(raw.get("skill_id"))
+                title = _optional_str(raw.get("title"))
+                version = _optional_str(raw.get("version"))
+                if not skill_id or not title or not version:
+                    continue
+                results.append(
+                    SkillRecord(
+                        skill_id=skill_id,
+                        title=title,
+                        version=version,
+                        usage_count=int(raw.get("usage_count", 0)),
+                        last_used_at=_optional_datetime(raw.get("last_used_at")),
+                        status=str(raw.get("status", "active")),
+                    )
                 )
-            )
+            except (ValueError, TypeError):
+                continue
         return results
 
     def emit_report(
