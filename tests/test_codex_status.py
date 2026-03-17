@@ -29,3 +29,18 @@ def test_build_codex_status_counts_sessions_and_reports(tmp_path: Path) -> None:
     assert payload["counts"]["signalFiles"] == 1
     assert payload["latestReport"]["recommendationCount"] == 2
 
+
+def test_build_codex_status_reports_install_and_skill_presence(tmp_path: Path) -> None:
+    codex_home = tmp_path / ".codex"
+    data_dir = codex_home / "autoskill-lc"
+    skill_dir = codex_home / "skills" / "autoskill-lc-governance"
+    data_dir.mkdir(parents=True)
+    skill_dir.mkdir(parents=True)
+    (data_dir / "install-manifest.json").write_text("{}", encoding="utf-8")
+    (skill_dir / "SKILL.md").write_text("# AutoSkill-LC\n", encoding="utf-8")
+
+    payload = build_codex_status(codex_home)
+
+    assert payload["installed"] is True
+    assert payload["skillInstalled"] is True
+    assert payload["paths"]["manifestPath"].endswith("install-manifest.json")

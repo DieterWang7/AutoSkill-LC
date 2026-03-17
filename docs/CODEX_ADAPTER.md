@@ -17,6 +17,19 @@ under `~/.codex/sessions/...jsonl` and command history under
 
 ## Commands
 
+Install AutoSkill-LC into a local Codex home:
+
+```bash
+python -m pip install "git+https://github.com/DieterWang7/AutoSkill-LC.git"
+autoskill-lc codex-install --codex-home ~/.codex
+```
+
+Uninstall only AutoSkill-LC managed files:
+
+```bash
+autoskill-lc codex-uninstall --codex-home ~/.codex
+```
+
 Ingest one session file:
 
 ```bash
@@ -42,6 +55,37 @@ Inspect adapter status:
 ```bash
 autoskill-lc codex-status --codex-home ~/.codex
 ```
+
+## Install safety
+
+The installer only writes under:
+
+- `<CODEX_HOME>/autoskill-lc/**`
+- `<CODEX_HOME>/skills/autoskill-lc-governance/**`
+
+It records created files and directories in:
+
+```text
+<CODEX_HOME>/autoskill-lc/install-manifest.json
+```
+
+Uninstall deletes only manifest-listed paths. It does not modify:
+
+- `<CODEX_HOME>/config.toml`
+- `<CODEX_HOME>/history.jsonl`
+- `<CODEX_HOME>/sessions/**`
+- other skills under `<CODEX_HOME>/skills/*`
+
+## Fresh install helper
+
+On Windows, you can run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\examples\codex\fresh-install-and-safe-uninstall.ps1
+```
+
+This performs a fresh GitHub install, prints adapter status, uninstalls the
+adapter, and verifies that Codex core files remain intact.
 
 ## Output
 

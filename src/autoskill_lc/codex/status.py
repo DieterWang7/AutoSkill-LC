@@ -13,10 +13,14 @@ def build_codex_status(codex_home: Path) -> dict[str, object]:
     return {
         "adapterId": ADAPTER_ID,
         "codexHome": str(paths.codex_home),
+        "installed": paths.manifest_path.exists(),
+        "skillInstalled": paths.skill_file.exists(),
         "paths": {
             "dataDir": str(paths.data_dir),
             "sessionsDir": str(paths.sessions_dir),
             "historyPath": str(paths.history_path),
+            "manifestPath": str(paths.manifest_path),
+            "skillDir": str(paths.skill_dir),
         },
         "counts": {
             "sessionFiles": _count_jsonl_files(paths.sessions_dir),

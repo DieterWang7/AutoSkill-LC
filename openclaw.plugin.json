@@ -1,0 +1,38 @@
+{
+  "id": "autoskill-lc-openclaw",
+  "name": "AutoSkill-LC OpenClaw",
+  "description": "Loosely-coupled self-evolving skill governance for OpenClaw.",
+  "version": "0.1.0",
+  "skills": [
+    "./extensions/autoskill-lc-openclaw/skills"
+  ],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "pythonCommand": {
+        "type": "string"
+      },
+      "workspaceDir": {
+        "type": "string"
+      },
+      "reportName": {
+        "type": "string"
+      }
+    }
+  },
+  "uiHints": {
+    "pythonCommand": {
+      "label": "Python Command",
+      "placeholder": "python"
+    },
+    "workspaceDir": {
+      "label": "Workspace Dir",
+      "placeholder": "~/.openclaw"
+    },
+    "reportName": {
+      "label": "Report File Name",
+      "placeholder": "latest-governance-report.json"
+    }
+  }
+}

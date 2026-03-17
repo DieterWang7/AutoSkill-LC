@@ -5,6 +5,14 @@ import json
 import sys
 from pathlib import Path
 
+from autoskill_lc.codex.adapter import CodexAdapter
+from autoskill_lc.codex.exporter import ingest_codex_session, ingest_codex_sessions_directory
+from autoskill_lc.codex.installer import (
+    CodexInstallOptions,
+    install_codex_adapter,
+    uninstall_codex_adapter,
+)
+from autoskill_lc.codex.status import build_codex_status
 from autoskill_lc.openclaw.adapter import OpenClawAdapter
 from autoskill_lc.openclaw.exporter import ingest_openclaw_export
 from autoskill_lc.openclaw.installer import (
@@ -41,6 +49,30 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_parser.add_argument("--input", required=True)
     ingest_parser.add_argument("--session-id")
     ingest_parser.add_argument("--topic")
+
+    codex_status_parser = subparsers.add_parser("codex-status")
+    codex_status_parser.add_argument("--codex-home", required=True)
+
+    codex_install_parser = subparsers.add_parser("codex-install")
+    codex_install_parser.add_argument("--codex-home", required=True)
+    codex_install_parser.add_argument("--no-skill", action="store_true")
+
+    codex_uninstall_parser = subparsers.add_parser("codex-uninstall")
+    codex_uninstall_parser.add_argument("--codex-home", required=True)
+
+    codex_ingest_parser = subparsers.add_parser("codex-ingest-session")
+    codex_ingest_parser.add_argument("--codex-home", required=True)
+    codex_ingest_parser.add_argument("--input", required=True)
+    codex_ingest_parser.add_argument("--session-id")
+    codex_ingest_parser.add_argument("--topic")
+
+    codex_ingest_all_parser = subparsers.add_parser("codex-ingest-all")
+    codex_ingest_all_parser.add_argument("--codex-home", required=True)
+    codex_ingest_all_parser.add_argument("--sessions-dir")
+
+    codex_maintain_parser = subparsers.add_parser("codex-maintain")
+    codex_maintain_parser.add_argument("--codex-home", required=True)
+    codex_maintain_parser.add_argument("--report-name", default="latest-governance-report.json")
 
     return parser
 
@@ -116,6 +148,103 @@ def main(argv: list[str] | None = None) -> int:
                         "outputPath": str(result.output_path),
                         "signalCount": result.signal_count,
                         "sessionId": result.session_id,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return 0
+
+        if args.command == "codex-status":
+            payload = build_codex_status(Path(args.codex_home))
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "codex-install":
+            options = CodexInstallOptions(
+                codex_home=Path(args.codex_home),
+                install_skill=not args.no_skill,
+            )
+            manifest = install_codex_adapter(options)
+            print(json.dumps(manifest, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "codex-uninstall":
+            uninstall_codex_adapter(CodexInstallOptions(codex_home=Path(args.codex_home)))
+            print(
+                json.dumps(
+                    {
+                        "ok": True,
+                        "codexHome": str(Path(args.codex_home).expanduser().resolve()),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return 0
+
+        if args.command == "codex-ingest-session":
+            input_path = Path(args.input)
+            if not input_path.exists():
+                raise FileNotFoundError(f"Input session file does not exist: {input_path}")
+            result = ingest_codex_session(
+                Path(args.codex_home),
+                input_path,
+                session_id=args.session_id,
+                topic=args.topic,
+            )
+            print(
+                json.dumps(
+                    {
+                        "ok": True,
+                        "inputPath": str(result.input_path),
+                        "outputPath": str(result.output_path),
+                        "signalCount": result.signal_count,
+                        "sessionId": result.session_id,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return 0
+
+        if args.command == "codex-ingest-all":
+            sessions_dir = Path(args.sessions_dir) if args.sessions_dir else None
+            results = ingest_codex_sessions_directory(
+                Path(args.codex_home),
+                sessions_dir=sessions_dir,
+            )
+            print(
+                json.dumps(
+                    {
+                        "ok": True,
+                        "ingestedFiles": len(results),
+                        "signalsWritten": sum(item.signal_count for item in results),
+                        "outputs": [str(item.output_path) for item in results],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return 0
+
+        if args.command == "codex-maintain":
+            codex_home = Path(args.codex_home)
+            adapter = CodexAdapter.for_home(codex_home)
+            report_path = adapter.paths.data_dir / "reports" / args.report_name
+            recommendations = run_maintenance(
+                adapter,
+                job=MaintenanceJob(
+                    adapter_name=adapter.name,
+                    report_path=report_path,
+                ),
+            )
+            print(
+                json.dumps(
+                    {
+                        "ok": True,
+                        "reportPath": str(report_path),
+                        "recommendationCount": len(recommendations),
                     },
                     ensure_ascii=False,
                     indent=2,
