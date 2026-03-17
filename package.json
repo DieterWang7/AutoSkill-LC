@@ -1,0 +1,29 @@
+{
+  "name": "@dieterwang7/autoskill-lc-openclaw",
+  "version": "0.1.0",
+  "description": "AutoSkill-LC OpenClaw plugin wrapper and skill pack.",
+  "license": "MIT",
+  "type": "module",
+  "private": false,
+  "files": [
+    "extensions/autoskill-lc-openclaw/**",
+    "src/**",
+    "docs/**",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml"
+  ],
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "skills",
+    "autoskill",
+    "governance"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./extensions/autoskill-lc-openclaw/index.js"
+    ],
+    "setupEntry": "./extensions/autoskill-lc-openclaw/setup-entry.js"
+  }
+}
