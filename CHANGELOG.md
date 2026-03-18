@@ -33,6 +33,9 @@
 - Legacy checkpoint values that were accidentally written with a future-looking
   `+00:00` offset are now reinterpreted as local wall-clock time when safe, so
   incremental filtering and window summaries remain usable on upgraded hosts
+- OpenClaw and Codex exporters now skip greeting-only conversations such as
+  `hello/hi/你好`, so low-information chatter no longer becomes candidate
+  governance items
 
 ### Notes
 

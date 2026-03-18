@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from autoskill_lc.codex.exporter import ingest_codex_session
 
 
@@ -121,3 +123,34 @@ def test_ingest_codex_session_extracts_impossible_signal(tmp_path: Path) -> None
     assert len(impossible) == 1
     assert impossible[0]["missing_requirement"] == "这个需求当前无法实现，因为宿主没有提供对应 API。"
     assert impossible[0]["prerequisites"] == ["Host or tool API support"]
+
+
+def test_ingest_codex_session_skips_greeting_only_conversation(tmp_path: Path) -> None:
+    codex_home = tmp_path / ".codex"
+    session_path = tmp_path / "rollout-greeting.jsonl"
+    session_path.write_text(
+        "\n".join(
+            [
+                json.dumps({"type": "session_meta", "sessionId": "sess-greeting"}),
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {"role": "user", "content": "hello"},
+                        "timestamp": "2026-03-18T10:00:00Z",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {"role": "assistant", "content": "hi"},
+                        "timestamp": "2026-03-18T10:00:01Z",
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="No valid conversation signals"):
+        ingest_codex_session(codex_home, session_path)

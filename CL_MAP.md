@@ -204,6 +204,18 @@ When syncing with upstream AutoSkill changes, review in this order:
   before timezone handling was hardened and avoids negative window durations
 - also repair legacy watermarks that were mistakenly persisted with `+00:00`
   while still representing local wall-clock time
+
+### 2026-03-18 low-information conversation filtering
+
+- OpenClaw and Codex exporters now drop greeting-only conversations from the
+  candidate signal path
+- examples filtered by default:
+  - `hello`
+  - `hi`
+  - `你好`
+  - `在吗`
+- tooling/unresolved/impossible derived signals are still preserved when the
+  conversation contains actionable requirements
 - touched files:
   - `src/autoskill_lc/core/reporting.py`
   - `src/autoskill_lc/runtime/checkpoints.py`

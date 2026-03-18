@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from autoskill_lc.openclaw.exporter import ingest_openclaw_export
 
 
@@ -102,3 +104,23 @@ def test_ingest_openclaw_export_extracts_report_classifications_and_timestamps(
     assert len(tooling) == 1
     assert len(impossible) == 1
     assert len(unresolved) == 1
+
+
+def test_ingest_openclaw_export_skips_greeting_only_conversation(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    export_path = tmp_path / "conversation.json"
+    export_path.write_text(
+        json.dumps(
+            {
+                "id": "oc-greeting",
+                "messages": [
+                    {"role": "user", "content": "hello", "created_at": "2026-03-18T10:00:00Z"},
+                    {"role": "assistant", "content": "hi", "updated_at": "2026-03-18T10:00:01Z"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="No valid conversation signals"):
+        ingest_openclaw_export(workspace, export_path)

@@ -19,6 +19,19 @@ TOOL_REFERENCE_DEFAULTS = (
     "openclaw/openclaw",
     "microsoft/vscode",
 )
+LOW_INFORMATION_TEXTS = {
+    "hello",
+    "hi",
+    "hey",
+    "你好",
+    "您好",
+    "在吗",
+    "在么",
+    "收到",
+    "ok",
+    "okay",
+    "好的",
+}
 
 
 @dataclass(frozen=True)
@@ -168,7 +181,9 @@ def _conversation_to_signals(
         ),
         "report_classification": "candidate_only",
     }
-    derived = [base_signal]
+    derived: list[dict[str, object]] = []
+    if not _is_low_information_conversation(messages):
+        derived.append(base_signal)
     derived.extend(_derived_report_signals(base_signal=base_signal, messages=messages))
     return derived
 
@@ -216,9 +231,14 @@ def _evidence_from_messages(messages: list[dict[str, str]]) -> tuple[str, ...]:
 def _derive_topic_from_messages(messages: list[dict[str, str]]) -> str | None:
     for message in messages:
         if message["role"].lower() in {"user", "human"}:
+            if _is_low_information_text(message["text"]):
+                continue
             return _trim_text(message["text"], length=80)
     if messages:
-        return _trim_text(messages[0]["text"], length=80)
+        for message in messages:
+            if _is_low_information_text(message["text"]):
+                continue
+            return _trim_text(message["text"], length=80)
     return None
 
 
@@ -312,6 +332,22 @@ def _first_matching_text(messages: list[dict[str, str]], keywords: tuple[str, ..
         if any(keyword.lower() in lowered for keyword in keywords):
             return _trim_text(text)
     return None
+
+
+def _is_low_information_conversation(messages: list[dict[str, str]]) -> bool:
+    if not messages:
+        return True
+    meaningful = [message for message in messages if not _is_low_information_text(message["text"])]
+    return not meaningful
+
+
+def _is_low_information_text(text: str) -> bool:
+    compact = re.sub(r"[\s\W_]+", "", text, flags=re.UNICODE).lower()
+    if not compact:
+        return True
+    if compact in LOW_INFORMATION_TEXTS:
+        return True
+    return len(compact) <= 4 and compact in LOW_INFORMATION_TEXTS
 
 
 def _dedupe_signals(signals: list[dict[str, object]]) -> list[dict[str, object]]:
