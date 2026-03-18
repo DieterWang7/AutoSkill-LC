@@ -88,7 +88,22 @@ Example:
 
 - `/autoskill-status`
 - `/autoskill-maintain`
+- `/autoskill-cl`
 - `/autoskill-ingest <export-json-path>`
+
+`/autoskill-maintain` and `/autoskill-cl` should render the human-readable
+`report.display` section instead of dumping raw CLI JSON or legacy shell logs.
+
+## Legacy script note
+
+Do not treat old workspace scripts such as `workspace/scripts/autoskill_cl.sh`
+as the authoritative report renderer.
+
+Those scripts may still exist as historical automation artifacts, but the
+plugin command output should come from:
+
+- `~/.openclaw/autoskill-lc/reports/latest-governance-report.json`
+- especially the `display` section
 
 ## Current limitation
 

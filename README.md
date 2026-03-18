@@ -58,6 +58,15 @@ This release focuses on OpenClaw adapter stability. The core architecture is hos
 | ChatGPT | Planned |
 | Gemini | Planned |
 
+For OpenClaw chat usage, prefer:
+
+- `/autoskill-status`
+- `/autoskill-maintain`
+- `/autoskill-cl`
+
+These commands are expected to render the report `display` layer rather than
+legacy shell-log output.
+
 ## Architecture
 
 ```

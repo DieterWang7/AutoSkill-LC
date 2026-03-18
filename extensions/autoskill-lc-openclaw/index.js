@@ -19,17 +19,24 @@ function resolveReportPath(config) {
   return path.join(resolveDataDir(config), "reports", config?.reportName || DEFAULT_REPORT_NAME);
 }
 
+function resolveCheckpointPath(config) {
+  return path.join(resolveDataDir(config), "checkpoint.md");
+}
+
 function summarizeStatus(config) {
   const workspaceDir = resolveWorkspaceDir(config);
   const dataDir = resolveDataDir(config);
   const reportPath = resolveReportPath(config);
+  const checkpointPath = resolveCheckpointPath(config);
   return {
     workspaceDir,
     dataDir,
     signalsDir: path.join(dataDir, "signals"),
     inventoryPath: path.join(dataDir, "inventory", "skills.json"),
     reportPath,
-    reportExists: fs.existsSync(reportPath)
+    reportExists: fs.existsSync(reportPath),
+    checkpointPath,
+    checkpointExists: fs.existsSync(checkpointPath)
   };
 }
 
@@ -59,6 +66,113 @@ function formatRunResult(result) {
   return result.stdout?.trim() || "AutoSkill-LC command completed.";
 }
 
+function readJson(pathname) {
+  if (!fs.existsSync(pathname)) {
+    return null;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(pathname, "utf-8"));
+  } catch {
+    return null;
+  }
+}
+
+function formatItems(items, formatter) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return ["- 无"];
+  }
+  return items.map((item, index) => formatter(item, index));
+}
+
+function renderDisplayReport(status, payload) {
+  const display = payload?.display;
+  if (!display) {
+    return [
+      "AutoSkill-LC 已执行，但报告里没有 display 区块。",
+      `报告路径：${status.reportPath}`
+    ].join("\n");
+  }
+
+  const lines = [
+    "AutoSkill-LC 执行报告",
+    "",
+    `1. ${display.identifiedExperiences?.text || "本次识别出的经验：无"}`,
+    ...formatItems(display.identifiedExperiences?.items, (item) => {
+      return `- ${item.topic}${item.action ? ` | 动作: ${item.action}` : ""}${item.skillId ? ` | skill: ${item.skillId}` : ""}`;
+    }),
+    "",
+    `2. ${display.governanceSuggestions?.text || "治理建议：无"}`,
+    ...formatItems(display.governanceSuggestions?.items, (item) => {
+      return `- ${item.topic}${item.action ? ` | 动作: ${item.action}` : ""}${item.skillId ? ` | skill: ${item.skillId}` : ""}${item.replacementSkillId ? ` | 替代: ${item.replacementSkillId}` : ""}`;
+    }),
+    "",
+    `3. ${display.forgottenRequirements?.text || "遗忘需求提醒：无"}`,
+    ...formatItems(display.forgottenRequirements?.items, (item) => {
+      return `- ${item.requirement}${item.plan ? ` | 方案: ${item.plan}` : ""}`;
+    }),
+    "",
+    `4. ${display.toolingNeeds?.text || "需要工具实现：无"}`,
+    ...formatItems(display.toolingNeeds?.items, (item) => {
+      const refs = Array.isArray(item.referenceProjects) ? item.referenceProjects.join(", ") : "";
+      return `- ${item.requirement}${refs ? ` | 参考项目: ${refs}` : ""}`;
+    }),
+    "",
+    `5. ${display.impossibleItems?.text || "当前不可实现：无"}`,
+    ...formatItems(display.impossibleItems?.items, (item) => {
+      const prerequisites = Array.isArray(item.prerequisites) ? item.prerequisites.join(", ") : "";
+      return `- ${item.requirement}${item.reason ? ` | 原因: ${item.reason}` : ""}${prerequisites ? ` | 前提: ${prerequisites}` : ""}`;
+    }),
+    "",
+    `6. ${display.checkpointWindowSummary?.text || "过去到上个检查点暂无可用总结。"}`,
+    "",
+    `报告路径：${status.reportPath}`,
+    `检查点：${status.checkpointPath}`
+  ];
+  return lines.join("\n");
+}
+
+function formatStatusText(status) {
+  const payload = readJson(status.reportPath);
+  if (payload?.display) {
+    return [
+      "AutoSkill-LC OpenClaw plugin",
+      `workspace: ${status.workspaceDir}`,
+      `signals: ${status.signalsDir}`,
+      `inventory: ${status.inventoryPath}`,
+      `report: ${status.reportPath}`,
+      `checkpoint: ${status.checkpointPath}`,
+      "",
+      renderDisplayReport(status, payload)
+    ].join("\n");
+  }
+  return [
+    "AutoSkill-LC OpenClaw plugin",
+    `workspace: ${status.workspaceDir}`,
+    `signals: ${status.signalsDir}`,
+    `inventory: ${status.inventoryPath}`,
+    `report: ${status.reportPath}`,
+    `report-exists: ${status.reportExists}`,
+    `checkpoint: ${status.checkpointPath}`,
+    `checkpoint-exists: ${status.checkpointExists}`
+  ].join("\n");
+}
+
+function formatMaintainText(config, result) {
+  const status = summarizeStatus(config);
+  if (result.error || (typeof result.status === "number" && result.status !== 0)) {
+    return formatRunResult(result);
+  }
+  const payload = readJson(status.reportPath);
+  if (!payload) {
+    return [
+      "AutoSkill-LC 已执行，但未读取到报告文件。",
+      `报告路径：${status.reportPath}`,
+      formatRunResult(result)
+    ].join("\n");
+  }
+  return renderDisplayReport(status, payload);
+}
+
 export default function register(api) {
   api.registerGatewayMethod(`${PLUGIN_ID}.status`, ({ pluginConfig, respond }) => {
     respond(true, summarizeStatus(pluginConfig));
@@ -70,14 +184,7 @@ export default function register(api) {
     handler: (ctx) => {
       const status = summarizeStatus(ctx.pluginConfig);
       return {
-        text: [
-          "AutoSkill-LC OpenClaw plugin",
-          `workspace: ${status.workspaceDir}`,
-          `signals: ${status.signalsDir}`,
-          `inventory: ${status.inventoryPath}`,
-          `report: ${status.reportPath}`,
-          `report-exists: ${status.reportExists}`
-        ].join("\n")
+        text: formatStatusText(status)
       };
     }
   });
@@ -96,7 +203,26 @@ export default function register(api) {
         reportName
       ]);
       return {
-        text: formatRunResult(result)
+        text: formatMaintainText(ctx.pluginConfig, result)
+      };
+    }
+  });
+
+  api.registerCommand({
+    name: "autoskill-cl",
+    description: "Run AutoSkill-LC maintenance and display the governance summary",
+    handler: (ctx) => {
+      const workspaceDir = resolveWorkspaceDir(ctx.pluginConfig);
+      const reportName = ctx.pluginConfig?.reportName || DEFAULT_REPORT_NAME;
+      const result = runPythonCli(ctx.pluginConfig, [
+        "openclaw-maintain",
+        "--workspace-dir",
+        workspaceDir,
+        "--report-name",
+        reportName
+      ]);
+      return {
+        text: formatMaintainText(ctx.pluginConfig, result)
       };
     }
   });
