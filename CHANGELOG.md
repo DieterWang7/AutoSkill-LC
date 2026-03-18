@@ -46,6 +46,8 @@
   - verification results
   - apply policy decisions
   - rollback ledger output
+- Every maintenance run now writes a ledger entry, even when no patch proposal
+  is generated, so the evolution pipeline remains auditable on quiet runs
 
 ### Notes
 

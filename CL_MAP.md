@@ -245,6 +245,8 @@ When syncing with upstream AutoSkill changes, review in this order:
   - verification results
   - apply policy decisions
   - rollback ledger entries
+- ledger writing is unconditional per maintenance run so quiet runs remain
+  auditable too
 - report files are enriched post-write with those artifacts instead of changing
   adapter contracts
 - touched files:

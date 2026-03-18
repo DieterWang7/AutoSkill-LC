@@ -57,24 +57,22 @@ def run_maintenance(
         generated_at=now,
         checkpoint_state=checkpoint_state,
     )
-    ledger_entry = None
-    if proposals or verifications or decisions:
-        ledger_path = _ledger_path_for(job.report_path)
-        ledger = write_ledger_entry(
-            ledger_path,
-            proposals=proposals,
-            verifications=verifications,
-            decisions=decisions,
-            checkpoint_sequence=int((checkpoint_state or {}).get("sequence", 0)),
-            report_path=job.report_path,
-            generated_at=now,
-        )
-        ledger_entry = {
-            "path": str(ledger_path),
-            "checkpointSequence": ledger.checkpoint_sequence,
-            "proposalCount": ledger.proposal_count,
-            "generatedAt": ledger.generated_at,
-        }
+    ledger_path = _ledger_path_for(job.report_path)
+    ledger = write_ledger_entry(
+        ledger_path,
+        proposals=proposals,
+        verifications=verifications,
+        decisions=decisions,
+        checkpoint_sequence=int((checkpoint_state or {}).get("sequence", 0)),
+        report_path=job.report_path,
+        generated_at=now,
+    )
+    ledger_entry = {
+        "path": str(ledger_path),
+        "checkpointSequence": ledger.checkpoint_sequence,
+        "proposalCount": ledger.proposal_count,
+        "generatedAt": ledger.generated_at,
+    }
     _enrich_report_file(
         job.report_path,
         semantic_merge=semantic_merge,

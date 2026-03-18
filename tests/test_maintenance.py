@@ -199,3 +199,30 @@ def test_run_maintenance_enriches_report_with_evolution_artifacts(tmp_path: Path
     assert payload["ledger"]["proposalCount"] == 1
     ledger_path = tmp_path / "autoskill-lc" / "ledger.jsonl"
     assert ledger_path.exists()
+
+
+def test_run_maintenance_writes_ledger_even_without_patch_proposals(tmp_path: Path) -> None:
+    adapter = FileWritingFakeAdapter()
+    report_path = tmp_path / "autoskill-lc" / "reports" / "governance.json"
+    checkpoint_path = tmp_path / "autoskill-lc" / "checkpoint.md"
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint_path.write_text(
+        "---\nsequence: 1\nlast_processed_at: 2026-03-18T10:00:00+00:00\n---\n",
+        encoding="utf-8",
+    )
+    adapter.collect_signals = lambda: []  # type: ignore[method-assign]
+    adapter.list_skills = lambda: []  # type: ignore[method-assign]
+
+    run_maintenance(
+        adapter,
+        job=MaintenanceJob(
+            adapter_name="fake-host",
+            report_path=report_path,
+            checkpoint_path=checkpoint_path,
+        ),
+        now=datetime(2026, 3, 18, 12, 0, tzinfo=timezone.utc),
+    )
+
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["ledger"]["proposalCount"] == 0
+    assert (tmp_path / "autoskill-lc" / "ledger.jsonl").exists()
