@@ -183,3 +183,53 @@ def test_ingest_codex_session_derives_compact_topic_from_long_request(tmp_path: 
     payload = json.loads(result.output_path.read_text(encoding="utf-8"))
 
     assert payload[0]["topic"] == "GitHub 安装和服务器自动同步"
+
+
+def test_ingest_codex_session_supports_real_codex_desktop_payload_format(
+    tmp_path: Path,
+) -> None:
+    codex_home = tmp_path / ".codex"
+    session_path = tmp_path / "rollout-real.jsonl"
+    session_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-18T10:00:00Z",
+                        "type": "session_meta",
+                        "payload": {"id": "sess-real", "title": "real desktop session"},
+                    }
+                ),
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-18T10:00:01Z",
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "user_message",
+                            "message": "请继续实现 GitHub 安装和服务器自动同步，这需要工具实现。",
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-18T10:00:02Z",
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "agent_message",
+                            "message": "还没完成，下一步需要补服务器同步流程。",
+                        },
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = ingest_codex_session(codex_home, session_path)
+    payload = json.loads(result.output_path.read_text(encoding="utf-8"))
+
+    assert result.session_id == "sess-real"
+    assert payload[0]["conversation_title"] == "real desktop session"
+    assert payload[0]["topic"] == "real desktop session"
+    assert any(item["report_classification"] == "tooling_needed" for item in payload)

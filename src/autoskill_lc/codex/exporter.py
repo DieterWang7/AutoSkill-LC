@@ -147,6 +147,15 @@ def _extract_messages(events: list[dict[str, object]]) -> list[dict[str, str]]:
 
 
 def _extract_message(event: dict[str, object]) -> tuple[str | None, str | None]:
+    payload = event.get("payload")
+    if isinstance(payload, dict):
+        payload_role, payload_text = _extract_message_from_payload(
+            payload,
+            event_type=_optional_text(event.get("type")),
+        )
+        if payload_role and payload_text:
+            return payload_role, payload_text
+
     direct_role = _optional_text(event.get("role"))
     direct_text = _extract_text_value(event.get("content"))
     if direct_role and direct_text:
@@ -167,6 +176,25 @@ def _extract_message(event: dict[str, object]) -> tuple[str | None, str | None]:
             return role, text
 
     return direct_role, direct_text
+
+
+def _extract_message_from_payload(
+    payload: dict[str, object],
+    *,
+    event_type: str | None,
+) -> tuple[str | None, str | None]:
+    payload_type = _optional_text(payload.get("type"))
+    if event_type == "event_msg":
+        if payload_type == "user_message":
+            return "user", _optional_text(payload.get("message"))
+        if payload_type == "agent_message":
+            return "assistant", _optional_text(payload.get("message"))
+    if payload_type == "message":
+        role = _optional_text(payload.get("role"))
+        text = _extract_text_from_content_blocks(payload.get("content"))
+        if role and text:
+            return role, text
+    return None, None
 
 
 def _derived_report_signals(
@@ -283,12 +311,31 @@ def _extract_text_value(value: object) -> str | None:
     return None
 
 
+def _extract_text_from_content_blocks(value: object) -> str | None:
+    if not isinstance(value, list):
+        return _extract_text_value(value)
+    parts: list[str] = []
+    for item in value:
+        if isinstance(item, dict):
+            text = _extract_text_value(item.get("text"))
+            if text:
+                parts.append(text)
+    combined = " ".join(parts).strip()
+    return combined or None
+
+
 def _derive_session_id(events: list[dict[str, object]]) -> str | None:
     for event in events:
         for key in ("session_id", "sessionId", "id"):
             value = _optional_text(event.get(key))
             if value:
                 return value
+        payload = event.get("payload")
+        if isinstance(payload, dict):
+            for key in ("session_id", "sessionId", "id"):
+                value = _optional_text(payload.get(key))
+                if value:
+                    return value
         message = event.get("message")
         if isinstance(message, dict):
             for key in ("session_id", "sessionId", "id"):
@@ -304,6 +351,12 @@ def _derive_topic(events: list[dict[str, object]], messages: list[dict[str, str]
             value = _optional_text(event.get(key))
             if value:
                 return value
+        payload = event.get("payload")
+        if isinstance(payload, dict):
+            for key in ("title", "topic", "summary"):
+                value = _optional_text(payload.get(key))
+                if value:
+                    return value
         message = event.get("message")
         if isinstance(message, dict):
             for key in ("title", "topic"):
@@ -329,6 +382,12 @@ def _optional_title(events: list[dict[str, object]]) -> str | None:
             value = _optional_text(event.get(key))
             if value:
                 return value
+        payload = event.get("payload")
+        if isinstance(payload, dict):
+            for key in ("title", "topic", "summary"):
+                value = _optional_text(payload.get(key))
+                if value:
+                    return value
         message = event.get("message")
         if isinstance(message, dict):
             for key in ("title", "topic"):
