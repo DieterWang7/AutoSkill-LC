@@ -328,6 +328,8 @@ older signals and focus on newly added conversation material.
 - [docs/ADAPTERS.md](docs/ADAPTERS.md) - Adapter development guide
 - [docs/REPORT_V2.md](docs/REPORT_V2.md) - Governance report v2 schema
 - [docs/OPENCLAW_SERVER_SAFETY_SKILL_MERGE.md](docs/OPENCLAW_SERVER_SAFETY_SKILL_MERGE.md) - OpenClaw server safety skill merge plan
+- [DEVOLUTION.md](DEVOLUTION.md) - Sustainable evolution architecture
+- [docs/plans/2026-03-18-sustainable-evolution-execution-plan.md](docs/plans/2026-03-18-sustainable-evolution-execution-plan.md) - Sustainable evolution execution plan
 - [CL_MAP.md](CL_MAP.md) - CL-specific upgrade map
 
 ## Development

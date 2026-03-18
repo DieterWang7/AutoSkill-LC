@@ -58,6 +58,8 @@ should be preserved during future sync work.
 
 - `docs/REPORT_V2.md`
 - `docs/OPENCLAW_SERVER_SAFETY_SKILL_MERGE.md`
+- `DEVOLUTION.md`
+- `docs/plans/2026-03-18-sustainable-evolution-execution-plan.md`
 
 ### External CL-managed skill source
 
