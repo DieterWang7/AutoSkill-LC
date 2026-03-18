@@ -109,3 +109,24 @@ def test_write_checkpoint_entry_keeps_previous_last_processed_at_when_no_new_sig
     content = checkpoint_path.read_text(encoding="utf-8")
     assert "sequence: 2" in content
     assert "last_processed_at: 2026-03-18T12:30:00+00:00" in content
+
+
+def test_write_checkpoint_entry_uses_run_time_when_signal_has_no_timestamp(tmp_path: Path) -> None:
+    checkpoint_path = tmp_path / "checkpoint.md"
+
+    write_checkpoint_entry(
+        checkpoint_path,
+        host="openclaw",
+        signals=[
+            ConversationSignal(
+                topic="hello",
+                conversation_id="conv-1",
+                conversation_title="hello",
+            )
+        ],
+        recommendations=[],
+        run_at=datetime(2026, 3, 18, 13, 0, tzinfo=timezone.utc),
+    )
+
+    content = checkpoint_path.read_text(encoding="utf-8")
+    assert "last_processed_at: 2026-03-18T13:00:00+00:00" in content
