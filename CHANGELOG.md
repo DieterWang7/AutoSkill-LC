@@ -23,6 +23,7 @@
   - `checkpoint.md`
 - OpenClaw server safety guidance split into an independent external skill
 - Documentation updated for report v2, checkpoint tracking, and naming policy
+- OpenClaw plugin display now renders `report.display` instead of legacy shell logs
 
 ### Notes
 

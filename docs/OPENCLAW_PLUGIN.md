@@ -105,6 +105,13 @@ plugin command output should come from:
 - `~/.openclaw/autoskill-lc/reports/latest-governance-report.json`
 - especially the `display` section
 
+In production, the legacy workspace script chain should be decommissioned:
+
+- archive `workspace/scripts/autoskill_cl.sh`
+- archive `workspace/logs/autoskill_cl_*.log`
+- update `workspace/HEARTBEAT.md` to point operators to `/autoskill-cl` or
+  `/autoskill-maintain`
+
 ## Current limitation
 
 The plugin wrapper requires the Python package to be available on the host.

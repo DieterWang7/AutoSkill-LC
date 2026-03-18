@@ -177,6 +177,16 @@ When syncing with upstream AutoSkill changes, review in this order:
 - exporters now persist `conversation_id` and `conversation_title`
 - status now exposes `checkpointPath`
 
+### 2026-03-18 OpenClaw display migration
+
+- OpenClaw plugin commands now render `report.display`
+- added `/autoskill-cl` as a display-oriented alias
+- legacy workspace script output is no longer the authoritative report source
+- production cleanup should archive:
+  - `workspace/scripts/autoskill_cl.sh`
+  - `workspace/logs/autoskill_cl_*.log`
+  - and replace HEARTBEAT references with plugin-command guidance
+
 ## Naming rule
 
 - functional/runtime files must use English names
