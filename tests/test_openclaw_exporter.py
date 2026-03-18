@@ -124,3 +124,28 @@ def test_ingest_openclaw_export_skips_greeting_only_conversation(tmp_path: Path)
 
     with pytest.raises(ValueError, match="No valid conversation signals"):
         ingest_openclaw_export(workspace, export_path)
+
+
+def test_ingest_openclaw_export_derives_compact_topic_from_long_request(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    export_path = tmp_path / "conversation.json"
+    export_path.write_text(
+        json.dumps(
+            {
+                "id": "oc-compact-topic",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "请继续实现 GitHub 安装和服务器自动同步，这需要工具实现。",
+                        "created_at": "2026-03-18T10:00:00Z",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = ingest_openclaw_export(workspace, export_path)
+    payload = json.loads(result.output_path.read_text(encoding="utf-8"))
+
+    assert payload[0]["topic"] == "GitHub 安装和服务器自动同步"

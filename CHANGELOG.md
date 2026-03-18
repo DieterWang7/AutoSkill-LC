@@ -36,6 +36,9 @@
 - OpenClaw and Codex exporters now skip greeting-only conversations such as
   `hello/hi/你好`, so low-information chatter no longer becomes candidate
   governance items
+- Topic extraction now compacts long imperative requests into cleaner themes,
+  for example turning `请继续实现 GitHub 安装和服务器自动同步，这需要工具实现。`
+  into `GitHub 安装和服务器自动同步`
 
 ### Notes
 

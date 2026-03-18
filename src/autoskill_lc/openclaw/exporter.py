@@ -233,12 +233,12 @@ def _derive_topic_from_messages(messages: list[dict[str, str]]) -> str | None:
         if message["role"].lower() in {"user", "human"}:
             if _is_low_information_text(message["text"]):
                 continue
-            return _trim_text(message["text"], length=80)
+            return _compact_topic_text(message["text"])
     if messages:
         for message in messages:
             if _is_low_information_text(message["text"]):
                 continue
-            return _trim_text(message["text"], length=80)
+            return _compact_topic_text(message["text"])
     return None
 
 
@@ -420,6 +420,16 @@ def _trim_text(value: str, *, length: int = MAX_EVIDENCE_CHARS) -> str:
     if len(text) <= length:
         return text
     return text[: length - 1].rstrip() + "..."
+
+
+def _compact_topic_text(value: str) -> str:
+    text = _trim_text(value, length=80).strip("。！？!?；;，, ")
+    text = re.sub(r"^(请|麻烦|帮我|请你)+", "", text).strip()
+    text = re.sub(r"^(继续|继续实现|实现|优化|补齐|完成)+", "", text).strip()
+    text = re.split(r"[，。！？!?；;]", text, maxsplit=1)[0].strip()
+    text = re.sub(r"(这|并且|而且)?需要工具实现.*$", "", text).strip()
+    text = re.sub(r"(这个需求|该需求).*$", "", text).strip()
+    return text or _trim_text(value, length=80)
 
 
 def _slugify(value: str) -> str:

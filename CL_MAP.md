@@ -216,6 +216,8 @@ When syncing with upstream AutoSkill changes, review in this order:
   - `在吗`
 - tooling/unresolved/impossible derived signals are still preserved when the
   conversation contains actionable requirements
+- long imperative user requests are also compacted into cleaner `topic`
+  strings before entering candidate/governance analysis
 - touched files:
   - `src/autoskill_lc/core/reporting.py`
   - `src/autoskill_lc/runtime/checkpoints.py`

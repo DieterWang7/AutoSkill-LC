@@ -154,3 +154,32 @@ def test_ingest_codex_session_skips_greeting_only_conversation(tmp_path: Path) -
 
     with pytest.raises(ValueError, match="No valid conversation signals"):
         ingest_codex_session(codex_home, session_path)
+
+
+def test_ingest_codex_session_derives_compact_topic_from_long_request(tmp_path: Path) -> None:
+    codex_home = tmp_path / ".codex"
+    session_path = tmp_path / "rollout-compact-topic.jsonl"
+    session_path.write_text(
+        "\n".join(
+            [
+                json.dumps({"type": "session_meta", "sessionId": "sess-compact-topic"}),
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {
+                            "role": "user",
+                            "content": "请继续实现 GitHub 安装和服务器自动同步，这需要工具实现。",
+                        },
+                        "timestamp": "2026-03-18T10:00:00Z",
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = ingest_codex_session(codex_home, session_path)
+    payload = json.loads(result.output_path.read_text(encoding="utf-8"))
+
+    assert payload[0]["topic"] == "GitHub 安装和服务器自动同步"
