@@ -62,3 +62,43 @@ def test_ingest_openclaw_export_preserves_normalized_signals(tmp_path: Path) -> 
     assert result.signal_count == 1
     assert payload[0]["topic"] == "release-note drafting"
     assert payload[0]["observed_runs"] == 3
+
+
+def test_ingest_openclaw_export_extracts_report_classifications_and_timestamps(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    export_path = tmp_path / "conversation.json"
+    export_path.write_text(
+        json.dumps(
+            {
+                "id": "oc-1",
+                "title": "autoskill nightly sync",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "请继续实现 GitHub 安装和服务器自动同步，这需要工具实现。",
+                        "created_at": "2026-03-18T10:00:00Z",
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "这个需求当前无法实现，因为宿主没有提供对应 API。",
+                        "updated_at": "2026-03-18T10:03:00Z",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = ingest_openclaw_export(workspace, export_path)
+    payload = json.loads(result.output_path.read_text(encoding="utf-8"))
+
+    assert result.signal_count == 4
+    assert payload[0]["last_observed_at"] == "2026-03-18T10:03:00+00:00"
+    tooling = [item for item in payload if item.get("report_classification") == "tooling_needed"]
+    impossible = [item for item in payload if item.get("report_classification") == "impossible"]
+    unresolved = [item for item in payload if item.get("report_classification") == "unresolved"]
+    assert len(tooling) == 1
+    assert len(impossible) == 1
+    assert len(unresolved) == 1

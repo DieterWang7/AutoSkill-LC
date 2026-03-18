@@ -14,6 +14,11 @@ DEFAULT_OBSERVED_RUNS = 1
 MAX_EVIDENCE_ITEMS = 6
 MAX_EVIDENCE_CHARS = 240
 FALLBACK_TOPIC = "openclaw-conversation"
+TOOL_REFERENCE_DEFAULTS = (
+    "openai/codex",
+    "openclaw/openclaw",
+    "microsoft/vscode",
+)
 
 
 @dataclass(frozen=True)
@@ -60,28 +65,31 @@ def _extract_signals(
     if isinstance(payload, dict):
         raw_signals = payload.get("signals")
         if isinstance(raw_signals, list):
-            return [
+            signals = [
                 _normalize_signal(item, topic=topic)
                 for item in raw_signals
                 if isinstance(item, dict)
             ]
+            return _dedupe_signals(signals)
 
         conversations = payload.get("conversations")
         if isinstance(conversations, list):
-            return [
-                _conversation_to_signal(item, session_id=session_id, topic=topic)
-                for item in conversations
-                if isinstance(item, dict)
-            ]
+            signals: list[dict[str, object]] = []
+            for item in conversations:
+                if not isinstance(item, dict):
+                    continue
+                signals.extend(_conversation_to_signals(item, session_id=session_id, topic=topic))
+            return _dedupe_signals(signals)
 
-        return [_conversation_to_signal(payload, session_id=session_id, topic=topic)]
+        return _dedupe_signals(_conversation_to_signals(payload, session_id=session_id, topic=topic))
 
     if isinstance(payload, list):
-        return [
-            _conversation_to_signal(item, session_id=session_id, topic=topic)
-            for item in payload
-            if isinstance(item, dict)
-        ]
+        signals: list[dict[str, object]] = []
+        for item in payload:
+            if not isinstance(item, dict):
+                continue
+            signals.extend(_conversation_to_signals(item, session_id=session_id, topic=topic))
+        return _dedupe_signals(signals)
 
     return []
 
@@ -113,12 +121,12 @@ def _normalize_signal(raw: dict[str, object], *, topic: str | None) -> dict[str,
     }
 
 
-def _conversation_to_signal(
+def _conversation_to_signals(
     raw: dict[str, object],
     *,
     session_id: str | None,
     topic: str | None,
-) -> dict[str, object]:
+) -> list[dict[str, object]]:
     messages = _coerce_messages(raw.get("messages") or raw.get("turns") or raw.get("conversation"))
     derived_topic = _first_non_empty(
         topic,
@@ -133,7 +141,7 @@ def _conversation_to_signal(
     if not evidence:
         evidence = _evidence_from_messages(messages)
 
-    return {
+    base_signal = {
         "conversation_id": _first_non_empty(
             _coerce_text(raw.get("conversation_id")),
             _coerce_text(raw.get("session_id")),
@@ -153,12 +161,16 @@ def _conversation_to_signal(
         "corrections": _coerce_int(raw.get("corrections"), 0),
         "explicit_uninstall_request": bool(raw.get("explicit_uninstall_request", False)),
         "superseded_by": _optional_text(raw.get("superseded_by")),
-        "last_observed_at": _optional_timestamp(
+        "last_observed_at": _latest_message_timestamp(messages) or _optional_timestamp(
             raw.get("last_observed_at")
             or raw.get("updated_at")
             or raw.get("timestamp")
         ),
+        "report_classification": "candidate_only",
     }
+    derived = [base_signal]
+    derived.extend(_derived_report_signals(base_signal=base_signal, messages=messages))
+    return derived
 
 
 def _coerce_messages(value: object) -> list[dict[str, str]]:
@@ -179,7 +191,18 @@ def _coerce_messages(value: object) -> list[dict[str, str]]:
             _coerce_text(item.get("message")),
         )
         if text:
-            messages.append({"role": role, "text": text})
+            messages.append(
+                {
+                    "role": role,
+                    "text": text,
+                    "timestamp": _optional_timestamp(
+                        item.get("updated_at")
+                        or item.get("created_at")
+                        or item.get("timestamp")
+                        or item.get("time")
+                    ),
+                }
+            )
     return messages
 
 
@@ -215,6 +238,96 @@ def _coerce_evidence(value: object) -> tuple[str, ...]:
         items = [_trim_text(str(item)) for item in value if str(item).strip()]
         return tuple(items[:MAX_EVIDENCE_ITEMS])
     return (_trim_text(str(value)),)
+
+
+def _latest_message_timestamp(messages: list[dict[str, str]]) -> str | None:
+    timestamps = [
+        timestamp
+        for message in messages
+        if (timestamp := message.get("timestamp"))
+    ]
+    if not timestamps:
+        return None
+    return max(str(item) for item in timestamps)
+
+
+def _derived_report_signals(
+    *,
+    base_signal: dict[str, object],
+    messages: list[dict[str, str]],
+) -> list[dict[str, object]]:
+    derived: list[dict[str, object]] = []
+    user_messages = [item for item in messages if item["role"].lower() in {"user", "human"}]
+    assistant_messages = [item for item in messages if item["role"].lower() == "assistant"]
+
+    tooling_message = _first_matching_text(user_messages, ("工具实现", "自动同步", "github 安装", "ssh", "cron", "插件"))
+    if tooling_message:
+        derived.append(
+            {
+                **base_signal,
+                "topic": base_signal["conversation_title"] or base_signal["topic"],
+                "report_classification": "tooling_needed",
+                "missing_requirement": tooling_message,
+                "tool_references": list(TOOL_REFERENCE_DEFAULTS),
+            }
+        )
+
+    unresolved_message = _first_matching_text(
+        assistant_messages + user_messages,
+        ("还没完成", "未完成", "下一步", "待处理", "请继续"),
+    )
+    if unresolved_message:
+        derived.append(
+            {
+                **base_signal,
+                "topic": base_signal["conversation_title"] or base_signal["topic"],
+                "report_classification": "unresolved",
+                "missing_requirement": _first_matching_text(user_messages, ("请", "需要", "实现", "继续"))
+                or base_signal["topic"],
+                "next_step": unresolved_message,
+            }
+        )
+
+    impossible_message = _first_matching_text(
+        assistant_messages + user_messages,
+        ("无法实现", "做不到", "不可能", "没有提供", "缺少对应 api"),
+    )
+    if impossible_message:
+        derived.append(
+            {
+                **base_signal,
+                "topic": base_signal["conversation_title"] or base_signal["topic"],
+                "report_classification": "impossible",
+                "missing_requirement": impossible_message,
+                "prerequisites": ["Host or tool API support"],
+            }
+        )
+    return derived
+
+
+def _first_matching_text(messages: list[dict[str, str]], keywords: tuple[str, ...]) -> str | None:
+    for message in messages:
+        text = message["text"]
+        lowered = text.lower()
+        if any(keyword.lower() in lowered for keyword in keywords):
+            return _trim_text(text)
+    return None
+
+
+def _dedupe_signals(signals: list[dict[str, object]]) -> list[dict[str, object]]:
+    deduped: list[dict[str, object]] = []
+    seen: set[tuple[str, str, str | None]] = set()
+    for signal in signals:
+        key = (
+            str(signal.get("conversation_id") or ""),
+            str(signal.get("report_classification") or ""),
+            str(signal.get("missing_requirement") or signal.get("topic") or ""),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(signal)
+    return deduped
 
 
 def _coerce_text(value: object) -> str | None:

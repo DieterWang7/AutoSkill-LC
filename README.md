@@ -287,6 +287,10 @@ Supported `report_classification` values:
 - `tooling_needed`
 - `impossible`
 
+In practice, exporters may also derive these classifications automatically from
+conversation text, so hosts can start producing unresolved/tooling/impossible
+sections without hand-authoring signal JSON.
+
 ## Checkpoint Log
 
 Each maintenance run also writes a markdown checkpoint file:
