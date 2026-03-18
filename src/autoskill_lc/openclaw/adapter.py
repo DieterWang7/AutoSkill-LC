@@ -130,12 +130,16 @@ class OpenClawAdapter:
         *,
         report_path: Path,
         signals: list[ConversationSignal],
+        generated_at: datetime | None = None,
+        checkpoint_state: dict[str, object] | None = None,
     ) -> None:
         write_governance_report(
             report_path,
             recommendations,
             host=self.name,
             signals=signals,
+            generated_at=generated_at,
+            checkpoint_state=checkpoint_state,
         )
 
 

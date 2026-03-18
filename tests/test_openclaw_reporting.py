@@ -84,6 +84,11 @@ def test_write_governance_report_creates_structured_output(tmp_path: Path) -> No
         recommendations,
         host="openclaw",
         signals=signals,
+        generated_at=datetime(2026, 3, 18, 14, 0, tzinfo=timezone.utc),
+        checkpoint_state={
+            "sequence": 3,
+            "last_processed_at": "2026-03-18T10:00:00+00:00",
+        },
     )
 
     assert report_path.exists()
@@ -98,6 +103,8 @@ def test_write_governance_report_creates_structured_output(tmp_path: Path) -> No
     assert payload["summary"]["unresolvedRequirementCount"] == 1
     assert payload["summary"]["toolingNeedCount"] == 1
     assert payload["summary"]["impossibleItemCount"] == 1
+    assert payload["summary"]["window"]["hoursSinceLastCheckpoint"] == 4.0
+    assert payload["summary"]["window"]["dialogueCount"] == 5
 
     # Check first recommendation structure
     rec1 = payload["recommendations"][0]
@@ -136,6 +143,31 @@ def test_write_governance_report_creates_structured_output(tmp_path: Path) -> No
     impossible_item = payload["impossibleItems"][0]
     assert impossible_item["requirement"] == "Delete active host memory without host support"
     assert impossible_item["prerequisites"] == ["Host memory deletion API"]
+
+    display = payload["display"]
+    assert display["identifiedExperiences"]["text"] == "本次识别出的经验：1 条"
+    assert display["governanceSuggestions"]["text"] == "治理建议：2 条"
+    assert display["forgottenRequirements"]["text"] == "遗忘需求提醒：1 条"
+    assert display["toolingNeeds"]["text"] == "需要工具实现：1 条"
+    assert display["impossibleItems"]["text"] == "当前不可实现：1 条"
+    assert (
+        display["checkpointWindowSummary"]["text"]
+        == "过去到上个检查点合计 4.0 小时的 5 条对话的核心沉淀：test skill；另外有 2 条治理建议待处理。"
+    )
+
+    forgotten_display = display["forgottenRequirements"]["items"][0]
+    assert forgotten_display["reminder"] == "用户提过但本次未完成，建议主动提醒并继续处理。"
+    assert forgotten_display["plan"] == "Add npm install provenance validation flow"
+
+    tooling_display = display["toolingNeeds"]["items"][0]
+    assert tooling_display["referenceProjects"] == [
+        "openai/codex",
+        "openclaw/openclaw",
+        "microsoft/vscode",
+    ]
+
+    impossible_display = display["impossibleItems"]["items"][0]
+    assert impossible_display["reason"] == "当前缺少必要前提，暂时不能落地。"
 
 
 def test_write_governance_report_creates_parent_directories(tmp_path: Path) -> None:
@@ -177,3 +209,5 @@ def test_write_governance_report_empty_recommendations(tmp_path: Path) -> None:
     assert payload["unresolvedRequirements"] == []
     assert payload["toolingNeeded"] == []
     assert payload["impossibleItems"] == []
+    assert payload["display"]["identifiedExperiences"]["text"] == "本次识别出的经验：无"
+    assert payload["display"]["governanceSuggestions"]["text"] == "治理建议：无"

@@ -11,6 +11,7 @@
   - `toolingNeeded`
   - `impossibleItems`
 - Host-neutral checkpoint tracking in `checkpoint.md`
+- Human-readable `display` report layer with Chinese operator summary
 - Incremental maintenance using `last_processed_at`
 - `conversation_id` and `conversation_title` signal fields
 - `checkpointPath` in OpenClaw and Codex status payloads

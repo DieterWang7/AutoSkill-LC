@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Protocol
 
@@ -31,5 +32,7 @@ class HostAdapter(Protocol):
         *,
         report_path: Path,
         signals: list[ConversationSignal],
+        generated_at: datetime | None = None,
+        checkpoint_state: dict[str, object] | None = None,
     ) -> None:
         """Persist governance recommendations for review."""

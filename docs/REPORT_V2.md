@@ -62,6 +62,19 @@ Expected use:
 - explain the blocker
 - list prerequisites or the reason it is not currently feasible
 
+### 7. display
+
+A human-readable operator layer that must present:
+
+- `本次识别出的经验`
+- `治理建议`
+- `遗忘需求提醒`
+- `需要工具实现`
+- `当前不可实现`
+- `过去到上个检查点...核心沉淀`
+
+If a section has no items, it must explicitly say `无`.
+
 ## Signal metadata
 
 Signals can optionally include:

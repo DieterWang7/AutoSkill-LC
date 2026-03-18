@@ -41,6 +41,8 @@ class FakeAdapter:
         *,
         report_path: Path,
         signals: list[ConversationSignal],
+        generated_at: datetime | None = None,
+        checkpoint_state: dict[str, object] | None = None,
     ) -> None:
         self.report_path = report_path
         self.last_report = recommendations

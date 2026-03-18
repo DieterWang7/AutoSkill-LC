@@ -177,6 +177,15 @@ AutoSkill-LC Report v2 classifies conversation evidence into five buckets:
 - `toolingNeeded`: requirements that need external tooling or integration work
 - `impossibleItems`: requests blocked by host limitations or missing prerequisites
 
+It also adds a human-readable `display` section for operators, with:
+
+- identified experiences
+- governance suggestions
+- forgotten user requirements
+- tooling-needed items with three reference projects
+- impossible items with prerequisites
+- one-line checkpoint window summary
+
 Reports are written to `autoskill-lc/reports/latest-governance-report.json`:
 
 ```json

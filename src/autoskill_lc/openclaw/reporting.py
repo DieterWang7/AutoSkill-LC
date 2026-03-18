@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from autoskill_lc.core.reporting import build_governance_report_payload
@@ -14,6 +15,8 @@ def write_governance_report(
     *,
     host: str,
     signals: list[ConversationSignal],
+    generated_at: datetime | None = None,
+    checkpoint_state: dict[str, object] | None = None,
 ) -> None:
     """Write a structured governance report to the specified path.
     
@@ -28,6 +31,8 @@ def write_governance_report(
         host=host,
         recommendations=recommendations,
         signals=signals,
+        generated_at=generated_at,
+        checkpoint_state=checkpoint_state,
     )
     
     temp_path = report_path.with_suffix(".tmp")
