@@ -211,15 +211,20 @@ Already implemented:
 - low-information greeting filtering
 - compact topic extraction for imperative requests
 - OpenClaw chat display rendering through `report.display`
+- semantic topic merge
+- topic-to-skill mapper
+- patch proposal generation
+- verification results
+- apply-tier decisions
+- rollback ledger output
 
 Not yet implemented:
 
-- semantic merge of near-duplicate topics
-- topic-to-skill mapper
-- patch generator
-- automated skill verifier
-- rollback ledger beyond checkpoint summaries
-- safe auto-apply policy tiers
+- semantic merge beyond simple normalized reordering
+- skill patch application to real skill files
+- automated semantic verifier beyond contract checks
+- rollback execution commands beyond ledger recording
+- safe auto-apply for real skill file mutation
 
 ## Priority order
 

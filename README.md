@@ -12,6 +12,14 @@ AutoSkill-LC watches conversation patterns between users and AI hosts, then reco
 - **DEPRECATE** skills that have been inactive for too long
 - **REMOVE** deprecated skills past their removal window
 
+It also now maintains a sustainable-evolution layer around those recommendations:
+
+- semantic topic merge
+- topic-to-skill mapping
+- patch proposal generation
+- verification and apply-tier decisions
+- rollback ledger output
+
 Key principles:
 - Host systems remain untouched and removable
 - Runs maintenance only when scheduled (no resident resource usage)

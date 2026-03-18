@@ -26,6 +26,9 @@
 - add replacement-aware deprecate flows
 - add host-specific signal extractors so report v2 sections are filled from
   real conversations instead of hand-authored signals
+- add semantic merge for near-duplicate conversation topics
+- add topic-to-skill mapper and patch proposal generation
+- add verification/apply-tier/ledger primitives for sustainable evolution
 
 ## Phase 4
 

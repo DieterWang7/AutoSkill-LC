@@ -39,6 +39,13 @@
 - Topic extraction now compacts long imperative requests into cleaner themes,
   for example turning `请继续实现 GitHub 安装和服务器自动同步，这需要工具实现。`
   into `GitHub 安装和服务器自动同步`
+- Added the first sustainable-evolution execution layer:
+  - semantic topic merge
+  - topic-to-skill mapping
+  - patch proposal generation
+  - verification results
+  - apply policy decisions
+  - rollback ledger output
 
 ### Notes
 

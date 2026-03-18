@@ -61,6 +61,21 @@ should be preserved during future sync work.
 - `DEVOLUTION.md`
 - `docs/plans/2026-03-18-sustainable-evolution-execution-plan.md`
 
+### Sustainable evolution modules
+
+- `src/autoskill_lc/core/semantic_merge.py`
+- `src/autoskill_lc/core/skill_mapper.py`
+- `src/autoskill_lc/core/patches.py`
+- `src/autoskill_lc/core/verifier.py`
+- `src/autoskill_lc/core/apply_policy.py`
+- `src/autoskill_lc/runtime/ledger.py`
+- `tests/test_semantic_merge.py`
+- `tests/test_skill_mapper.py`
+- `tests/test_patches.py`
+- `tests/test_verifier.py`
+- `tests/test_apply_policy.py`
+- `tests/test_ledger.py`
+
 ### External CL-managed skill source
 
 This skill is intentionally outside the AutoSkill-LC runtime repo:
@@ -220,6 +235,18 @@ When syncing with upstream AutoSkill changes, review in this order:
   conversation contains actionable requirements
 - long imperative user requests are also compacted into cleaner `topic`
   strings before entering candidate/governance analysis
+
+### 2026-03-18 sustainable evolution execution layer
+
+- `runtime/maintenance.py` now runs semantic merge before the governance engine
+- maintenance now derives:
+  - skill mappings
+  - patch proposals
+  - verification results
+  - apply policy decisions
+  - rollback ledger entries
+- report files are enriched post-write with those artifacts instead of changing
+  adapter contracts
 - touched files:
   - `src/autoskill_lc/core/reporting.py`
   - `src/autoskill_lc/runtime/checkpoints.py`

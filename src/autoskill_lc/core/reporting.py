@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime, timezone
 
+from autoskill_lc.core.apply_policy import ApplyDecision
 from autoskill_lc.core.models import (
     ConversationSignal,
     GovernanceRecommendation,
     RecommendationAction,
     ReportClassification,
 )
+from autoskill_lc.core.patches import PatchProposal
+from autoskill_lc.core.semantic_merge import SemanticMergeGroup, SemanticMergeResult
+from autoskill_lc.core.skill_mapper import SkillMatch
+from autoskill_lc.core.verifier import VerificationResult
 
 REPORT_SCHEMA_VERSION = "2.0"
 
@@ -86,6 +92,48 @@ def build_governance_report_payload(
     return payload
 
 
+def enrich_governance_report_payload(
+    payload: dict[str, object],
+    *,
+    semantic_merge: SemanticMergeResult | None = None,
+    mappings: dict[str, SkillMatch] | None = None,
+    proposals: list[PatchProposal] | None = None,
+    verifications: list[VerificationResult] | None = None,
+    decisions: list[ApplyDecision] | None = None,
+    ledger_entry: dict[str, object] | None = None,
+) -> dict[str, object]:
+    enriched = dict(payload)
+    if semantic_merge is not None:
+        enriched["semanticMerge"] = {
+            "groupCount": len(semantic_merge.groups),
+            "groups": [_serialize_merge_group(item) for item in semantic_merge.groups],
+        }
+    if mappings is not None:
+        enriched["skillMappings"] = [asdict(item) for item in mappings.values()]
+    if proposals is not None:
+        enriched["patchProposals"] = [asdict(item) for item in proposals]
+    if verifications is not None:
+        enriched["verificationResults"] = [asdict(item) for item in verifications]
+    if decisions is not None:
+        enriched["applyDecisions"] = [asdict(item) for item in decisions]
+    if ledger_entry is not None:
+        enriched["ledger"] = ledger_entry
+    summary = dict(enriched.get("summary", {}))
+    summary["semanticMergeGroupCount"] = (
+        len(semantic_merge.groups) if semantic_merge is not None else 0
+    )
+    summary["skillMappingCount"] = len(mappings or {})
+    summary["patchProposalCount"] = len(proposals or [])
+    summary["verifiedProposalCount"] = len(
+        [item for item in (verifications or []) if item.passed]
+    )
+    summary["autoApplyCount"] = len(
+        [item for item in (decisions or []) if item.tier.value == "safe_auto_apply"]
+    )
+    enriched["summary"] = summary
+    return enriched
+
+
 def _serialize_recommendation(item: GovernanceRecommendation) -> dict[str, object]:
     return {
         "action": item.action.value,
@@ -95,6 +143,14 @@ def _serialize_recommendation(item: GovernanceRecommendation) -> dict[str, objec
         "skill_id": item.skill_id,
         "replacement_skill_id": item.replacement_skill_id,
         "evidence": list(item.evidence),
+    }
+
+
+def _serialize_merge_group(item: SemanticMergeGroup) -> dict[str, object]:
+    return {
+        "canonicalTopic": item.canonical_topic,
+        "sourceTopics": list(item.source_topics),
+        "conversationIds": list(item.conversation_ids),
     }
 
 
