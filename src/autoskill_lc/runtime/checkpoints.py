@@ -59,7 +59,8 @@ def write_checkpoint_entry(
     previous = read_checkpoint_state(checkpoint_path)
     sequence = int(previous.get("sequence", 0)) + 1
     next_sequence = f"{sequence:04d}"
-    last_processed_at = _latest_observed_at(signals)
+    previous_last_processed_at = _parse_datetime(previous.get("last_processed_at"))
+    last_processed_at = _latest_observed_at(signals) or previous_last_processed_at
     previous_body = _read_existing_body(checkpoint_path)
 
     upgraded = [item.skill_id for item in recommendations if item.action is RecommendationAction.UPGRADE and item.skill_id]
