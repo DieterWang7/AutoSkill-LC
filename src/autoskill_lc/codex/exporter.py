@@ -81,7 +81,10 @@ def ingest_codex_sessions_directory(
         return results
 
     for path in sorted(root.rglob("*.jsonl")):
-        results.append(ingest_codex_session(codex_home, path))
+        try:
+            results.append(ingest_codex_session(codex_home, path))
+        except ValueError:
+            continue
     return results
 
 

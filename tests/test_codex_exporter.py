@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from autoskill_lc.codex.exporter import ingest_codex_session
+from autoskill_lc.codex.exporter import ingest_codex_session, ingest_codex_sessions_directory
 
 
 def test_ingest_codex_session_converts_jsonl_messages_to_signal(tmp_path: Path) -> None:
@@ -233,3 +233,34 @@ def test_ingest_codex_session_supports_real_codex_desktop_payload_format(
     assert payload[0]["conversation_title"] == "real desktop session"
     assert payload[0]["topic"] == "real desktop session"
     assert any(item["report_classification"] == "tooling_needed" for item in payload)
+
+
+def test_ingest_codex_sessions_directory_skips_invalid_sessions(tmp_path: Path) -> None:
+    codex_home = tmp_path / ".codex"
+    sessions_dir = codex_home / "sessions"
+    sessions_dir.mkdir(parents=True, exist_ok=True)
+    (sessions_dir / "valid.jsonl").write_text(
+        "\n".join(
+            [
+                json.dumps({"type": "session_meta", "sessionId": "sess-valid"}),
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {"role": "user", "content": "Refine release workflow."},
+                        "timestamp": "2026-03-18T09:00:00Z",
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (sessions_dir / "invalid.jsonl").write_text(
+        json.dumps({"type": "message", "message": {"role": "user", "content": "hi"}}) + "\n",
+        encoding="utf-8",
+    )
+
+    results = ingest_codex_sessions_directory(codex_home)
+
+    assert len(results) == 1
+    assert results[0].session_id == "sess-valid"
