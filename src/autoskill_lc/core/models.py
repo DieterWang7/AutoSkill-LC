@@ -48,6 +48,7 @@ class SkillRecord:
     usage_count: int = 0
     last_used_at: datetime | None = None
     status: str = "active"
+    skill_path: str | None = None
 
 
 @dataclass(frozen=True)

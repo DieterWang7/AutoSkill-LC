@@ -160,6 +160,7 @@ def test_run_maintenance_enriches_report_with_evolution_artifacts(tmp_path: Path
             confidence=0.88,
             observed_runs=3,
             last_observed_at=datetime(2026, 3, 18, 11, 0, tzinfo=timezone.utc),
+            existing_skill_id="skill-server-sync",
         )
     ]
     adapter.list_skills = lambda: [  # type: ignore[method-assign]
@@ -226,3 +227,60 @@ def test_run_maintenance_writes_ledger_even_without_patch_proposals(tmp_path: Pa
     payload = json.loads(report_path.read_text(encoding="utf-8"))
     assert payload["ledger"]["proposalCount"] == 0
     assert (tmp_path / "autoskill-lc" / "ledger.jsonl").exists()
+
+
+def test_run_maintenance_applies_safe_upgrade_and_writes_rollback_manifest(
+    tmp_path: Path,
+) -> None:
+    adapter = FileWritingFakeAdapter()
+    skill_path = tmp_path / "skills" / "skill-server-sync" / "SKILL.md"
+    skill_path.parent.mkdir(parents=True, exist_ok=True)
+    skill_path.write_text("# Skill\n\nOriginal body.\n", encoding="utf-8")
+    report_path = tmp_path / "autoskill-lc" / "reports" / "governance.json"
+    checkpoint_path = tmp_path / "autoskill-lc" / "checkpoint.md"
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint_path.write_text(
+        "---\nsequence: 2\nlast_processed_at: 2026-03-18T10:00:00+00:00\n---\n",
+        encoding="utf-8",
+    )
+    adapter.collect_signals = lambda: [  # type: ignore[method-assign]
+        ConversationSignal(
+            topic="GitHub 安装和服务器自动同步",
+            evidence=("user asked for server sync repeatedly",),
+            confidence=0.88,
+            observed_runs=3,
+            last_observed_at=datetime(2026, 3, 18, 11, 0, tzinfo=timezone.utc),
+            existing_skill_id="skill-server-sync",
+        )
+    ]
+    adapter.list_skills = lambda: [  # type: ignore[method-assign]
+        type(
+            "Skill",
+            (),
+            {
+                "skill_id": "skill-server-sync",
+                "title": "服务器自动同步 GitHub 安装",
+                "version": "1.0.0",
+                "usage_count": 1,
+                "last_used_at": datetime(2026, 3, 17, 11, 0, tzinfo=timezone.utc),
+                "status": "active",
+                "skill_path": str(skill_path),
+            },
+        )()
+    ]
+
+    run_maintenance(
+        adapter,
+        job=MaintenanceJob(
+            adapter_name="fake-host",
+            report_path=report_path,
+            checkpoint_path=checkpoint_path,
+        ),
+        now=datetime(2026, 3, 18, 12, 0, tzinfo=timezone.utc),
+    )
+
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["summary"]["appliedChangeCount"] == 1
+    assert len(payload["appliedChanges"]) == 1
+    assert "AutoSkill-LC Evolution" in skill_path.read_text(encoding="utf-8")
+    assert (tmp_path / "autoskill-lc" / "rollbacks" / "patch-0003-01.json").exists()

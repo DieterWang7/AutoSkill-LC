@@ -6,6 +6,7 @@ from pathlib import Path
 
 from autoskill_lc.adapters.base import HostAdapter
 from autoskill_lc.core.apply_policy import evaluate_apply_policy
+from autoskill_lc.core.applier import apply_patch_proposals
 from autoskill_lc.core.engine import GovernanceEngine
 from autoskill_lc.core.patches import build_patch_proposals
 from autoskill_lc.core.reporting import enrich_governance_report_payload
@@ -50,6 +51,22 @@ def run_maintenance(
     )
     verifications = verify_patch_proposals(proposals)
     decisions = evaluate_apply_policy(proposals, verifications)
+    rollback_dir = _rollback_dir_for(job.report_path)
+    applied_changes = [
+        {
+            "proposalId": item.proposal_id,
+            "skillPath": item.skill_path,
+            "rollbackManifestPath": item.rollback_manifest_path,
+            "appliedAt": item.applied_at,
+        }
+        for item in apply_patch_proposals(
+            proposals,
+            verifications=verifications,
+            decisions=decisions,
+            rollback_dir=rollback_dir,
+            generated_at=now,
+        )
+    ]
     adapter.emit_report(
         recommendations,
         report_path=job.report_path,
@@ -63,6 +80,7 @@ def run_maintenance(
         proposals=proposals,
         verifications=verifications,
         decisions=decisions,
+        applied_changes=applied_changes,
         checkpoint_sequence=int((checkpoint_state or {}).get("sequence", 0)),
         report_path=job.report_path,
         generated_at=now,
@@ -71,6 +89,7 @@ def run_maintenance(
         "path": str(ledger_path),
         "checkpointSequence": ledger.checkpoint_sequence,
         "proposalCount": ledger.proposal_count,
+        "appliedCount": ledger.applied_count,
         "generatedAt": ledger.generated_at,
     }
     _enrich_report_file(
@@ -81,6 +100,7 @@ def run_maintenance(
         verifications=verifications,
         decisions=decisions,
         ledger_entry=ledger_entry,
+        applied_changes=applied_changes,
     )
     if job.checkpoint_path is not None:
         write_checkpoint_entry(
@@ -99,6 +119,12 @@ def _ledger_path_for(report_path: Path) -> Path:
     return report_path.parent / "ledger.jsonl"
 
 
+def _rollback_dir_for(report_path: Path) -> Path:
+    if report_path.parent.name == "reports":
+        return report_path.parent.parent / "rollbacks"
+    return report_path.parent / "rollbacks"
+
+
 def _enrich_report_file(
     report_path: Path,
     *,
@@ -108,6 +134,7 @@ def _enrich_report_file(
     verifications,
     decisions,
     ledger_entry,
+    applied_changes,
 ) -> None:
     if not report_path.exists():
         return
@@ -120,6 +147,7 @@ def _enrich_report_file(
         verifications=verifications,
         decisions=decisions,
         ledger_entry=ledger_entry,
+        applied_changes=applied_changes,
     )
     report_path.write_text(
         json.dumps(enriched, ensure_ascii=False, indent=2) + "\n",

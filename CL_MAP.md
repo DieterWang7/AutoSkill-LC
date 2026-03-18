@@ -67,14 +67,18 @@ should be preserved during future sync work.
 - `src/autoskill_lc/core/skill_mapper.py`
 - `src/autoskill_lc/core/patches.py`
 - `src/autoskill_lc/core/verifier.py`
+- `src/autoskill_lc/core/applier.py`
 - `src/autoskill_lc/core/apply_policy.py`
 - `src/autoskill_lc/runtime/ledger.py`
+- `src/autoskill_lc/runtime/rollback.py`
 - `tests/test_semantic_merge.py`
 - `tests/test_skill_mapper.py`
 - `tests/test_patches.py`
 - `tests/test_verifier.py`
 - `tests/test_apply_policy.py`
 - `tests/test_ledger.py`
+- `tests/test_applier.py`
+- `tests/test_rollback.py`
 
 ### External CL-managed skill source
 
@@ -249,12 +253,18 @@ When syncing with upstream AutoSkill changes, review in this order:
   auditable too
 - report files are enriched post-write with those artifacts instead of changing
   adapter contracts
+- maintenance now supports guarded write-back for `SAFE_AUTO_APPLY` upgrade
+  proposals when `target_skill_path` is known
+- every auto-applied change writes a rollback manifest under `rollbacks/`
+- reports and ledger entries now expose applied-change audit metadata
 - touched files:
   - `src/autoskill_lc/core/reporting.py`
   - `src/autoskill_lc/runtime/checkpoints.py`
   - `src/autoskill_lc/runtime/maintenance.py`
+  - `src/autoskill_lc/core/applier.py`
   - `src/autoskill_lc/openclaw/adapter.py`
   - `src/autoskill_lc/codex/adapter.py`
+  - `src/autoskill_lc/runtime/rollback.py`
   - `src/autoskill_lc/openclaw/exporter.py`
   - `src/autoskill_lc/codex/exporter.py`
 

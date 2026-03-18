@@ -48,6 +48,11 @@
   - rollback ledger output
 - Every maintenance run now writes a ledger entry, even when no patch proposal
   is generated, so the evolution pipeline remains auditable on quiet runs
+- Added a safe auto-apply stage for high-confidence upgrade proposals with a
+  known `target_skill_path`
+- Added rollback manifests and a rollback executor for auto-applied skill
+  changes
+- Reports and ledger entries now include applied-change audit fields
 
 ### Notes
 

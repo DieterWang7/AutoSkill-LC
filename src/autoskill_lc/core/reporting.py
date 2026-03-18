@@ -101,6 +101,7 @@ def enrich_governance_report_payload(
     verifications: list[VerificationResult] | None = None,
     decisions: list[ApplyDecision] | None = None,
     ledger_entry: dict[str, object] | None = None,
+    applied_changes: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     enriched = dict(payload)
     if semantic_merge is not None:
@@ -116,6 +117,8 @@ def enrich_governance_report_payload(
         enriched["verificationResults"] = [asdict(item) for item in verifications]
     if decisions is not None:
         enriched["applyDecisions"] = [asdict(item) for item in decisions]
+    if applied_changes is not None:
+        enriched["appliedChanges"] = applied_changes
     if ledger_entry is not None:
         enriched["ledger"] = ledger_entry
     summary = dict(enriched.get("summary", {}))
@@ -130,6 +133,7 @@ def enrich_governance_report_payload(
     summary["autoApplyCount"] = len(
         [item for item in (decisions or []) if item.tier.value == "safe_auto_apply"]
     )
+    summary["appliedChangeCount"] = len(applied_changes or [])
     enriched["summary"] = summary
     return enriched
 

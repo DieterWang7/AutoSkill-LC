@@ -20,6 +20,7 @@ def test_write_ledger_entry_appends_jsonl(tmp_path: Path) -> None:
                 action=RecommendationAction.UPGRADE,
                 target_skill_id="skill-1",
                 target_skill_title="Skill 1",
+                target_skill_path="E:/skills/skill-1/SKILL.md",
                 confidence=0.9,
                 checkpoint_sequence=1,
                 header_note="note",
@@ -37,11 +38,13 @@ def test_write_ledger_entry_appends_jsonl(tmp_path: Path) -> None:
                 reason="high-confidence narrow upgrade",
             )
         ],
+        applied_changes=[],
         checkpoint_sequence=1,
         report_path=Path("reports/latest.json"),
         generated_at=datetime(2026, 3, 18, tzinfo=timezone.utc),
     )
 
     assert entry.proposal_count == 1
+    assert entry.applied_count == 0
     payload = json.loads(ledger_path.read_text(encoding="utf-8").splitlines()[0])
     assert payload["checkpoint_sequence"] == 1

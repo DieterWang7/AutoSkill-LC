@@ -18,6 +18,8 @@ It also now maintains a sustainable-evolution layer around those recommendations
 - topic-to-skill mapping
 - patch proposal generation
 - verification and apply-tier decisions
+- safe auto-apply for high-confidence upgrade patches
+- rollback manifest generation and restore support
 - rollback ledger output
 
 Key principles:

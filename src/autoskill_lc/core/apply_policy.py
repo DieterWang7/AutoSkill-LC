@@ -48,12 +48,25 @@ def evaluate_apply_policy(
                 )
             )
             continue
-        if proposal.action is RecommendationAction.UPGRADE and proposal.confidence >= 0.85:
+        if (
+            proposal.action is RecommendationAction.UPGRADE
+            and proposal.confidence >= 0.85
+            and proposal.target_skill_path
+        ):
             decisions.append(
                 ApplyDecision(
                     proposal_id=proposal.proposal_id,
                     tier=ApplyTier.SAFE_AUTO_APPLY,
                     reason="high-confidence narrow upgrade",
+                )
+            )
+            continue
+        if proposal.action is RecommendationAction.UPGRADE and not proposal.target_skill_path:
+            decisions.append(
+                ApplyDecision(
+                    proposal_id=proposal.proposal_id,
+                    tier=ApplyTier.CANDIDATE_PATCH,
+                    reason="upgrade target path is unknown",
                 )
             )
             continue

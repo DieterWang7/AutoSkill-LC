@@ -21,6 +21,7 @@ def test_build_patch_proposals_uses_mapping_and_checkpoint_sequence() -> None:
                 topic="OpenClaw cron maintenance",
                 skill_id="skill-openclaw-cron",
                 skill_title="OpenClaw cron maintenance",
+                skill_path="E:/skills/openclaw-cron/SKILL.md",
                 confidence=0.95,
                 match_type="exact",
             )
@@ -33,4 +34,5 @@ def test_build_patch_proposals_uses_mapping_and_checkpoint_sequence() -> None:
     proposal = proposals[0]
     assert proposal.proposal_id == "patch-0008-01"
     assert proposal.target_skill_id == "skill-openclaw-cron"
+    assert proposal.target_skill_path == "E:/skills/openclaw-cron/SKILL.md"
     assert "optimized_at=" in proposal.header_note

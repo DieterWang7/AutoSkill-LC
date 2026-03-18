@@ -11,6 +11,7 @@ class SkillMatch:
     topic: str
     skill_id: str
     skill_title: str
+    skill_path: str | None
     confidence: float
     match_type: str
 
@@ -26,6 +27,7 @@ def map_signal_to_skill(
                     topic=signal.topic,
                     skill_id=skill.skill_id,
                     skill_title=skill.title,
+                    skill_path=getattr(skill, "skill_path", None),
                     confidence=1.0,
                     match_type="explicit",
                 )
@@ -49,6 +51,7 @@ def map_signal_to_skill(
                 topic=signal.topic,
                 skill_id=skill.skill_id,
                 skill_title=skill.title,
+                skill_path=getattr(skill, "skill_path", None),
                 confidence=0.95,
                 match_type="exact",
             )
@@ -62,6 +65,7 @@ def map_signal_to_skill(
                 topic=signal.topic,
                 skill_id=skill.skill_id,
                 skill_title=skill.title,
+                skill_path=getattr(skill, "skill_path", None),
                 confidence=round(score, 2),
                 match_type="overlap",
             )

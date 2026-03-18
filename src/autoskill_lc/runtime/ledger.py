@@ -16,9 +16,11 @@ class LedgerEntry:
     checkpoint_sequence: int
     report_path: str
     proposal_count: int
+    applied_count: int
     proposals: list[dict[str, object]]
     verifications: list[dict[str, object]]
     decisions: list[dict[str, object]]
+    applied_changes: list[dict[str, object]]
 
 
 def write_ledger_entry(
@@ -27,6 +29,7 @@ def write_ledger_entry(
     proposals: list[PatchProposal],
     verifications: list[VerificationResult],
     decisions: list[ApplyDecision],
+    applied_changes: list[dict[str, object]],
     checkpoint_sequence: int,
     report_path: Path,
     generated_at: datetime | None = None,
@@ -37,9 +40,11 @@ def write_ledger_entry(
         checkpoint_sequence=checkpoint_sequence,
         report_path=str(report_path),
         proposal_count=len(proposals),
+        applied_count=len(applied_changes),
         proposals=[asdict(item) for item in proposals],
         verifications=[asdict(item) for item in verifications],
         decisions=[asdict(item) for item in decisions],
+        applied_changes=applied_changes,
     )
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     with ledger_path.open("a", encoding="utf-8") as handle:

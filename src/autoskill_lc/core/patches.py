@@ -19,6 +19,7 @@ class PatchProposal:
     header_note: str
     operations: tuple[str, ...]
     evidence: tuple[str, ...]
+    target_skill_path: str | None = None
 
 
 def build_patch_proposals(
@@ -35,6 +36,7 @@ def build_patch_proposals(
         mapping = mappings.get(recommendation.topic)
         target_skill_id = recommendation.skill_id or (mapping.skill_id if mapping else None)
         target_skill_title = mapping.skill_title if mapping else None
+        target_skill_path = mapping.skill_path if mapping else None
         proposals.append(
             PatchProposal(
                 proposal_id=f"patch-{sequence + 1:04d}-{index:02d}",
@@ -42,6 +44,7 @@ def build_patch_proposals(
                 action=recommendation.action,
                 target_skill_id=target_skill_id,
                 target_skill_title=target_skill_title,
+                target_skill_path=target_skill_path,
                 confidence=recommendation.confidence,
                 checkpoint_sequence=sequence,
                 header_note=_header_note(report_time, recommendation),

@@ -113,6 +113,7 @@ class CodexAdapter:
                     usage_count=int(raw.get("usage_count", 0)),
                     last_used_at=_optional_datetime(raw.get("last_used_at")),
                     status=str(raw.get("status", "active")),
+                    skill_path=_optional_str(raw.get("skill_path") or raw.get("path")),
                 )
             )
         return results
