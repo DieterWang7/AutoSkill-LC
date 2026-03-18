@@ -28,6 +28,7 @@ def test_build_codex_status_counts_sessions_and_reports(tmp_path: Path) -> None:
     assert payload["counts"]["sessionFiles"] == 1
     assert payload["counts"]["signalFiles"] == 1
     assert payload["latestReport"]["recommendationCount"] == 2
+    assert payload["checkpoint"]["exists"] is False
 
 
 def test_build_codex_status_reports_install_and_skill_presence(tmp_path: Path) -> None:
@@ -44,3 +45,4 @@ def test_build_codex_status_reports_install_and_skill_presence(tmp_path: Path) -
     assert payload["installed"] is True
     assert payload["skillInstalled"] is True
     assert payload["paths"]["manifestPath"].endswith("install-manifest.json")
+    assert payload["paths"]["checkpointPath"].endswith("checkpoint.md")

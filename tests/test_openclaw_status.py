@@ -33,3 +33,5 @@ def test_build_openclaw_status_reports_installation_and_latest_report(tmp_path: 
     assert payload["pluginId"] == PLUGIN_ID
     assert payload["counts"]["signalFiles"] == 1
     assert payload["latestReport"]["recommendationCount"] == 4
+    assert payload["checkpoint"]["exists"] is False
+    assert payload["paths"]["checkpointPath"].endswith("checkpoint.md")

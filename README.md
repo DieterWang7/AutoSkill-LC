@@ -169,13 +169,35 @@ Place in `autoskill-lc/inventory/skills.json`:
 
 ## Report Output
 
+AutoSkill-LC Report v2 classifies conversation evidence into five buckets:
+
+- `evidenceBackedEvolutions`: confirmed experience worth merging into a skill
+- `candidateOnly`: weak or incomplete evidence that should not mutate a skill yet
+- `unresolvedRequirements`: user requirements mentioned but not completed
+- `toolingNeeded`: requirements that need external tooling or integration work
+- `impossibleItems`: requests blocked by host limitations or missing prerequisites
+
 Reports are written to `autoskill-lc/reports/latest-governance-report.json`:
 
 ```json
 {
+  "schemaVersion": "2.0",
   "host": "openclaw",
   "generatedAt": "2026-03-18T14:00:00+00:00",
   "recommendationCount": 2,
+  "summary": {
+    "evidenceBackedCount": 1,
+    "candidateOnlyCount": 1,
+    "unresolvedRequirementCount": 1,
+    "toolingNeedCount": 1,
+    "impossibleItemCount": 0,
+    "actions": {
+      "add": 1,
+      "upgrade": 1,
+      "deprecate": 0,
+      "remove": 0
+    }
+  },
   "recommendations": [
     {
       "action": "add",
@@ -186,9 +208,94 @@ Reports are written to `autoskill-lc/reports/latest-governance-report.json`:
       "replacement_skill_id": null,
       "evidence": ["user asked for release notes 3 times"]
     }
-  ]
+  ],
+  "evidenceBackedEvolutions": [
+    {
+      "topic": "git release workflow",
+      "confidence": 0.91,
+      "evidence": ["user asked for release notes 3 times"],
+      "recommendationAction": "add",
+      "skillId": null,
+      "rationale": "A recurring pattern without coverage suggests a new skill.",
+      "lastObservedAt": "2026-03-18T10:00:00+00:00"
+    }
+  ],
+  "candidateOnly": [
+    {
+      "topic": "single anecdotal optimization idea",
+      "confidence": 0.31,
+      "evidence": ["one weak example only"],
+      "reason": "Evidence is not yet strong enough to modify a skill.",
+      "nextStep": null
+    }
+  ],
+  "unresolvedRequirements": [
+    {
+      "topic": "install provenance cleanup",
+      "requirement": "Clean install provenance warning",
+      "evidence": ["user requested cleanup but the task was deferred"],
+      "nextStep": "Validate npm install provenance flow",
+      "confidence": 0.6
+    }
+  ],
+  "toolingNeeded": [
+    {
+      "topic": "nightly repository audit",
+      "requirement": "Add scheduled repository audit",
+      "evidence": ["requires automation support"],
+      "referenceProjects": ["openai/codex", "openclaw/openclaw", "microsoft/vscode"],
+      "confidence": 0.72
+    }
+  ],
+  "impossibleItems": []
 }
 ```
+
+## Extended Signal Fields
+
+Signals may optionally carry report governance hints:
+
+```json
+[
+  {
+    "topic": "install provenance cleanup",
+    "evidence": ["user requested cleanup but the task was deferred"],
+    "confidence": 0.6,
+    "report_classification": "unresolved",
+    "missing_requirement": "Clean install provenance warning",
+    "next_step": "Validate npm install provenance flow",
+    "tool_references": ["openai/codex", "openclaw/openclaw"],
+    "prerequisites": ["Host install provenance API"]
+  }
+]
+```
+
+Supported `report_classification` values:
+
+- `evidence_backed`
+- `candidate_only`
+- `unresolved`
+- `tooling_needed`
+- `impossible`
+
+## Checkpoint Log
+
+Each maintenance run also writes a markdown checkpoint file:
+
+- OpenClaw: `~/.openclaw/autoskill-lc/checkpoint.md`
+- Codex: `~/.codex/autoskill-lc/checkpoint.md`
+
+The checkpoint keeps reverse-chronological entries with:
+
+- sequence
+- run time
+- conversation ID
+- conversation title
+- upgraded skills
+- removed or deprecated skills
+
+The markdown frontmatter stores `last_processed_at`, so repeat runs can skip
+older signals and focus on newly added conversation material.
 
 ## Documentation
 
@@ -197,6 +304,9 @@ Reports are written to `autoskill-lc/reports/latest-governance-report.json`:
 - [docs/INSTALL.md](docs/INSTALL.md) - Detailed installation
 - [docs/UNINSTALL.md](docs/UNINSTALL.md) - Safe uninstallation
 - [docs/ADAPTERS.md](docs/ADAPTERS.md) - Adapter development guide
+- [docs/REPORT_V2.md](docs/REPORT_V2.md) - Governance report v2 schema
+- [docs/OPENCLAW_SERVER_SAFETY_SKILL_MERGE.md](docs/OPENCLAW_SERVER_SAFETY_SKILL_MERGE.md) - OpenClaw server safety skill merge plan
+- [CL_MAP.md](CL_MAP.md) - CL-specific upgrade map
 
 ## Development
 

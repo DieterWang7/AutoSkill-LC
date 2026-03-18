@@ -36,7 +36,8 @@ def test_ingest_codex_session_converts_jsonl_messages_to_signal(tmp_path: Path) 
 
     assert result.session_id == "sess-1"
     assert result.signal_count == 1
+    assert payload[0]["conversation_id"] == "sess-1"
+    assert payload[0]["conversation_title"] == "Refine the release note workflow."
     assert payload[0]["topic"] == "Refine the release note workflow."
     assert payload[0]["last_observed_at"] == "2026-03-18T09:00:05+00:00"
     assert payload[0]["evidence"][0].startswith("user: ")
-

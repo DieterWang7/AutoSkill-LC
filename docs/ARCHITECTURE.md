@@ -52,6 +52,39 @@ Responsibilities:
 - serialize recommendations
 - keep evidence trails
 - support review, rollback, and audit flows
+- classify findings into evidence-backed, candidate-only, unresolved,
+  tooling-needed, and impossible sections
+- separate "skill can evolve now" from "record only, do not mutate"
+
+## Report v2 contract
+
+`AutoSkill-LC Report v2` keeps the recommendation list, but adds five
+governance sections:
+
+- `evidenceBackedEvolutions`
+- `candidateOnly`
+- `unresolvedRequirements`
+- `toolingNeeded`
+- `impossibleItems`
+
+The report is fed by two sources:
+
+1. recommendations emitted by the governance engine
+2. optional signal metadata such as `report_classification`,
+   `missing_requirement`, `next_step`, `tool_references`, and
+   `prerequisites`
+
+This keeps the evidence policy inside AutoSkill-LC itself instead of creating
+another standalone "Evidence Governor" skill.
+
+## Evidence policy
+
+The engine should follow three gates:
+
+- evidence-backed: may contribute to skill evolution
+- candidate-only: record only, no skill mutation
+- unresolved/tooling/impossible: report to the operator with next steps,
+  references, or prerequisites
 
 ## Non-goals
 
@@ -64,4 +97,3 @@ Responsibilities:
 OpenClaw is the first adapter because it already has a clear plugin and cron
 story. The core engine must stay independent so later adapters can reuse the
 same logic.
-

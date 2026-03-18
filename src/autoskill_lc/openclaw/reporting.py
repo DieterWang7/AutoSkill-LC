@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 
+from autoskill_lc.core.reporting import build_governance_report_payload
 from autoskill_lc.core.models import GovernanceRecommendation
+from autoskill_lc.core.models import ConversationSignal
 
 
 def write_governance_report(
@@ -12,6 +13,7 @@ def write_governance_report(
     recommendations: list[GovernanceRecommendation],
     *,
     host: str,
+    signals: list[ConversationSignal],
 ) -> None:
     """Write a structured governance report to the specified path.
     
@@ -22,23 +24,11 @@ def write_governance_report(
     """
     report_path.parent.mkdir(parents=True, exist_ok=True)
     
-    def serialize_rec(r: GovernanceRecommendation) -> dict[str, object]:
-        return {
-            "action": r.action.value,
-            "topic": r.topic,
-            "confidence": r.confidence,
-            "rationale": r.rationale,
-            "skill_id": r.skill_id,
-            "replacement_skill_id": r.replacement_skill_id,
-            "evidence": list(r.evidence) if r.evidence else [],
-        }
-    
-    payload = {
-        "host": host,
-        "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "recommendationCount": len(recommendations),
-        "recommendations": [serialize_rec(item) for item in recommendations],
-    }
+    payload = build_governance_report_payload(
+        host=host,
+        recommendations=recommendations,
+        signals=signals,
+    )
     
     temp_path = report_path.with_suffix(".tmp")
     try:
@@ -51,4 +41,3 @@ def write_governance_report(
         if temp_path.exists():
             temp_path.unlink(missing_ok=True)
         raise
-

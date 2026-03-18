@@ -30,5 +30,6 @@ class HostAdapter(Protocol):
         recommendations: list[GovernanceRecommendation],
         *,
         report_path: Path,
+        signals: list[ConversationSignal],
     ) -> None:
         """Persist governance recommendations for review."""

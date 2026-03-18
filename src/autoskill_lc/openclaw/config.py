@@ -15,6 +15,7 @@ class OpenClawPaths:
     adapter_dir: Path
     manifest_path: Path
     config_path: Path
+    checkpoint_path: Path
 
     @classmethod
     def from_workspace(cls, workspace_dir: Path) -> "OpenClawPaths":
@@ -24,6 +25,7 @@ class OpenClawPaths:
         adapter_dir = workspace / "extensions" / PLUGIN_ID
         manifest_path = plugin_dir / "install-manifest.json"
         config_path = workspace / "openclaw.json"
+        checkpoint_path = data_dir / "checkpoint.md"
         return cls(
             workspace_dir=workspace,
             data_dir=data_dir,
@@ -31,5 +33,5 @@ class OpenClawPaths:
             adapter_dir=adapter_dir,
             manifest_path=manifest_path,
             config_path=config_path,
+            checkpoint_path=checkpoint_path,
         )
-

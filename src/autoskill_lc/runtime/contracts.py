@@ -15,6 +15,6 @@ class SchedulePolicy:
 class MaintenanceJob:
     adapter_name: str
     report_path: Path
+    checkpoint_path: Path | None = None
     dry_run: bool = True
     policy: SchedulePolicy = SchedulePolicy()
-

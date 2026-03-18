@@ -11,6 +11,14 @@ Use these directory roles consistently:
 - Codex data: `~/.codex/autoskill-lc`
 - Codex optional skill: `~/.codex/skills/autoskill-lc-governance`
 
+## Operational safety reference
+
+For production OpenClaw operations, use the merged safety skill in this repo as
+the human operator reference:
+
+- `docs/skills/openclaw-server-safety/SKILL.md`
+- `docs/skills/openclaw-server-safety/appendices/`
+
 ## Local bootstrap
 
 ```bash
@@ -68,6 +76,7 @@ example:
 - `autoskill-lc/signals` - Conversation signals (*.json)
 - `autoskill-lc/inventory` - Skill inventory (skills.json)
 - `autoskill-lc/reports` - Governance reports
+- `autoskill-lc/checkpoint.md` - Reverse-chronological checkpoint log with incremental run marker
 - `autoskill-lc/skills` - Skill storage
 
 ## Codex layout
@@ -102,6 +111,8 @@ Create JSON files in `autoskill-lc/signals/`:
 ```
 
 Fields:
+- `conversation_id`: Source conversation/session identifier
+- `conversation_title`: Human-readable conversation title
 - `topic` (required): Pattern topic or skill name
 - `evidence`: List of supporting evidence strings
 - `confidence`: 0.0-1.0 confidence score
@@ -111,6 +122,11 @@ Fields:
 - `explicit_uninstall_request`: True if user requested removal
 - `superseded_by`: ID of replacement skill
 - `last_observed_at`: ISO 8601 timestamp
+- `report_classification`: `evidence_backed`, `candidate_only`, `unresolved`, `tooling_needed`, or `impossible`
+- `missing_requirement`: Requirement not yet delivered
+- `next_step`: Suggested follow-up step
+- `tool_references`: Up to three candidate tool/reference projects
+- `prerequisites`: Missing host/platform prerequisites
 
 ## Skill Inventory Format
 

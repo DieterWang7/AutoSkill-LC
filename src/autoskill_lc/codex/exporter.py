@@ -97,6 +97,8 @@ def _events_to_signal(
     )
     return {
         "session_id": derived_session_id,
+        "conversation_id": derived_session_id,
+        "conversation_title": _optional_title(events) or derived_topic,
         "topic": derived_topic,
         "evidence": _evidence_from_messages(messages),
         "confidence": DEFAULT_SIGNAL_CONFIDENCE,
@@ -198,6 +200,21 @@ def _derive_topic(events: list[dict[str, object]], messages: list[dict[str, str]
     return None
 
 
+def _optional_title(events: list[dict[str, object]]) -> str | None:
+    for event in events:
+        for key in ("title", "topic", "summary"):
+            value = _optional_text(event.get(key))
+            if value:
+                return value
+        message = event.get("message")
+        if isinstance(message, dict):
+            for key in ("title", "topic"):
+                value = _optional_text(message.get(key))
+                if value:
+                    return value
+    return None
+
+
 def _evidence_from_messages(messages: list[dict[str, str]]) -> tuple[str, ...]:
     evidence: list[str] = []
     for message in messages[:MAX_EVIDENCE_ITEMS]:
@@ -262,6 +279,8 @@ def _slugify(value: str) -> str:
 
 def _finalize_signal(signal: dict[str, object]) -> dict[str, object]:
     return {
+        "conversation_id": signal["conversation_id"],
+        "conversation_title": signal["conversation_title"],
         "topic": signal["topic"],
         "evidence": signal["evidence"],
         "confidence": signal["confidence"],
@@ -282,4 +301,3 @@ def _write_json_atomic(path: Path, payload: object) -> None:
         encoding="utf-8",
     )
     temp_path.replace(path)
-

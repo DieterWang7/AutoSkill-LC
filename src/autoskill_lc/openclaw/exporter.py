@@ -89,6 +89,16 @@ def _extract_signals(
 def _normalize_signal(raw: dict[str, object], *, topic: str | None) -> dict[str, object]:
     normalized_topic = _first_non_empty(topic, _coerce_text(raw.get("topic")), FALLBACK_TOPIC)
     return {
+        "conversation_id": _optional_text(
+            raw.get("conversation_id")
+            or raw.get("session_id")
+            or raw.get("sessionId")
+            or raw.get("id")
+        ),
+        "conversation_title": _first_non_empty(
+            _coerce_text(raw.get("conversation_title")),
+            _coerce_text(raw.get("title")),
+        ),
         "topic": normalized_topic,
         "evidence": _coerce_evidence(raw.get("evidence")),
         "confidence": _coerce_float(raw.get("confidence"), DEFAULT_SIGNAL_CONFIDENCE),
@@ -124,6 +134,17 @@ def _conversation_to_signal(
         evidence = _evidence_from_messages(messages)
 
     return {
+        "conversation_id": _first_non_empty(
+            _coerce_text(raw.get("conversation_id")),
+            _coerce_text(raw.get("session_id")),
+            _coerce_text(raw.get("sessionId")),
+            _coerce_text(raw.get("id")),
+        ),
+        "conversation_title": _first_non_empty(
+            _coerce_text(raw.get("conversation_title")),
+            _coerce_text(raw.get("title")),
+            derived_topic,
+        ),
         "topic": derived_topic,
         "evidence": evidence,
         "confidence": _coerce_float(raw.get("confidence"), DEFAULT_SIGNAL_CONFIDENCE),

@@ -15,6 +15,7 @@ class CodexPaths:
     sessions_dir: Path
     history_path: Path
     manifest_path: Path
+    checkpoint_path: Path
     skills_root: Path
     skill_dir: Path
     skill_file: Path
@@ -26,6 +27,7 @@ class CodexPaths:
         sessions_dir = home / "sessions"
         history_path = home / "history.jsonl"
         manifest_path = data_dir / "install-manifest.json"
+        checkpoint_path = data_dir / "checkpoint.md"
         skills_root = home / "skills"
         skill_dir = skills_root / SKILL_ID
         skill_file = skill_dir / "SKILL.md"
@@ -35,6 +37,7 @@ class CodexPaths:
             sessions_dir=sessions_dir,
             history_path=history_path,
             manifest_path=manifest_path,
+            checkpoint_path=checkpoint_path,
             skills_root=skills_root,
             skill_dir=skill_dir,
             skill_file=skill_file,

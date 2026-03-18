@@ -8,7 +8,12 @@ from pathlib import Path
 from autoskill_lc.adapters.base import HostCapabilities
 from autoskill_lc.codex.config import CodexPaths
 from autoskill_lc.codex.reporting import write_governance_report
-from autoskill_lc.core.models import ConversationSignal, GovernanceRecommendation, SkillRecord
+from autoskill_lc.core.models import (
+    ConversationSignal,
+    GovernanceRecommendation,
+    ReportClassification,
+    SkillRecord,
+)
 
 
 def _load_json(path: Path, default: object) -> object:
@@ -61,6 +66,12 @@ class CodexAdapter:
                         evidence=_coerce_evidence(raw.get("evidence")),
                         confidence=float(raw.get("confidence", 0.0)),
                         observed_runs=int(raw.get("observed_runs", 1)),
+                        conversation_id=_optional_str(
+                            raw.get("conversation_id") or raw.get("session_id")
+                        ),
+                        conversation_title=_optional_str(
+                            raw.get("conversation_title") or raw.get("title")
+                        ),
                         existing_skill_id=_optional_str(raw.get("existing_skill_id")),
                         corrections=int(raw.get("corrections", 0)),
                         explicit_uninstall_request=bool(
@@ -68,6 +79,13 @@ class CodexAdapter:
                         ),
                         superseded_by=_optional_str(raw.get("superseded_by")),
                         last_observed_at=_optional_datetime(raw.get("last_observed_at")),
+                        report_classification=_report_classification(
+                            raw.get("report_classification")
+                        ),
+                        missing_requirement=_optional_str(raw.get("missing_requirement")),
+                        next_step=_optional_str(raw.get("next_step")),
+                        tool_references=_coerce_str_tuple(raw.get("tool_references")),
+                        prerequisites=_coerce_str_tuple(raw.get("prerequisites")),
                     )
                 )
         return results
@@ -104,8 +122,14 @@ class CodexAdapter:
         recommendations: list[GovernanceRecommendation],
         *,
         report_path: Path,
+        signals: list[ConversationSignal],
     ) -> None:
-        write_governance_report(report_path, recommendations, host=self.name)
+        write_governance_report(
+            report_path,
+            recommendations,
+            host=self.name,
+            signals=signals,
+        )
 
 
 def _optional_str(value: object) -> str | None:
@@ -116,6 +140,17 @@ def _optional_str(value: object) -> str | None:
 
 
 def _coerce_evidence(value: object) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        text = value.strip()
+        return (text,) if text else ()
+    if isinstance(value, list):
+        return tuple(str(item) for item in value if str(item).strip())
+    return (str(value),)
+
+
+def _coerce_str_tuple(value: object) -> tuple[str, ...]:
     if value is None:
         return ()
     if isinstance(value, str):
@@ -139,3 +174,12 @@ def _optional_datetime(value: object) -> datetime | None:
             return None
     return None
 
+
+def _report_classification(value: object) -> ReportClassification:
+    text = _optional_str(value)
+    if not text:
+        return ReportClassification.CANDIDATE_ONLY
+    try:
+        return ReportClassification(text)
+    except ValueError:
+        return ReportClassification.CANDIDATE_ONLY

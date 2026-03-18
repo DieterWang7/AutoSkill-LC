@@ -110,6 +110,7 @@ def main(argv: list[str] | None = None) -> int:
                 job=MaintenanceJob(
                     adapter_name=adapter.name,
                     report_path=report_path,
+                    checkpoint_path=options.paths.checkpoint_path,
                 ),
             )
             print(
@@ -117,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
                     {
                         "ok": True,
                         "reportPath": str(report_path),
+                        "checkpointPath": str(options.paths.checkpoint_path),
                         "recommendationCount": len(recommendations),
                     },
                     ensure_ascii=False,
@@ -237,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
                 job=MaintenanceJob(
                     adapter_name=adapter.name,
                     report_path=report_path,
+                    checkpoint_path=adapter.paths.checkpoint_path,
                 ),
             )
             print(
@@ -244,6 +247,7 @@ def main(argv: list[str] | None = None) -> int:
                     {
                         "ok": True,
                         "reportPath": str(report_path),
+                        "checkpointPath": str(adapter.paths.checkpoint_path),
                         "recommendationCount": len(recommendations),
                     },
                     ensure_ascii=False,

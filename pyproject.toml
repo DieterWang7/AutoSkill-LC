@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autoskill-lc"
-version = "0.1.0"
+version = "0.2.0"
 description = "A loosely-coupled self-evolving skill governance engine."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -30,4 +30,3 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-

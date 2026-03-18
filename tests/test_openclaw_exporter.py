@@ -29,6 +29,8 @@ def test_ingest_openclaw_export_converts_conversation_messages_to_signal(tmp_pat
 
     assert result.session_id == "session-42"
     assert result.signal_count == 1
+    assert payload[0]["conversation_id"] == "session-42"
+    assert payload[0]["conversation_title"] == "weekly cleanup workflow"
     assert payload[0]["topic"] == "weekly cleanup workflow"
     assert payload[0]["confidence"] == 0.81
     assert payload[0]["last_observed_at"] == "2026-03-18T08:30:00+00:00"

@@ -20,6 +20,7 @@ def build_codex_status(codex_home: Path) -> dict[str, object]:
             "sessionsDir": str(paths.sessions_dir),
             "historyPath": str(paths.history_path),
             "manifestPath": str(paths.manifest_path),
+            "checkpointPath": str(paths.checkpoint_path),
             "skillDir": str(paths.skill_dir),
         },
         "counts": {
@@ -31,6 +32,10 @@ def build_codex_status(codex_home: Path) -> dict[str, object]:
         "latestReport": {
             "path": str(latest_report_path) if latest_report_path else None,
             "recommendationCount": _extract_recommendation_count(latest_report_payload),
+        },
+        "checkpoint": {
+            "path": str(paths.checkpoint_path),
+            "exists": paths.checkpoint_path.exists(),
         },
     }
 

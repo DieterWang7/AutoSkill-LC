@@ -20,6 +20,7 @@ def build_openclaw_status(workspace_dir: Path) -> dict[str, object]:
             "adapterDir": str(paths.adapter_dir),
             "configPath": str(paths.config_path),
             "manifestPath": str(paths.manifest_path),
+            "checkpointPath": str(paths.checkpoint_path),
         },
         "counts": {
             "signalFiles": _count_json_files(paths.data_dir / "signals"),
@@ -29,6 +30,10 @@ def build_openclaw_status(workspace_dir: Path) -> dict[str, object]:
         "latestReport": {
             "path": str(latest_report_path) if latest_report_path else None,
             "recommendationCount": _extract_recommendation_count(latest_report_payload),
+        },
+        "checkpoint": {
+            "path": str(paths.checkpoint_path),
+            "exists": paths.checkpoint_path.exists(),
         },
     }
 
