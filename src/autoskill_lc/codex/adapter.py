@@ -177,9 +177,13 @@ def _optional_datetime(value: object) -> datetime | None:
         except ValueError:
             return None
         if parsed.tzinfo is None:
-            return parsed.replace(tzinfo=timezone.utc)
+            return parsed.replace(tzinfo=_local_timezone())
         return parsed
     return None
+
+
+def _local_timezone():
+    return datetime.now().astimezone().tzinfo or timezone.utc
 
 
 def _report_classification(value: object) -> ReportClassification:

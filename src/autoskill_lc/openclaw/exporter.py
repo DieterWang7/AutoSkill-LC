@@ -364,8 +364,12 @@ def _optional_timestamp(value: object) -> str | None:
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=_local_timezone())
     return parsed.isoformat()
+
+
+def _local_timezone():
+    return datetime.now().astimezone().tzinfo or timezone.utc
 
 
 def _first_non_empty(*values: str | None) -> str:

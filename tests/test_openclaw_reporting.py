@@ -215,13 +215,14 @@ def test_write_governance_report_empty_recommendations(tmp_path: Path) -> None:
 
 def test_write_governance_report_accepts_naive_checkpoint_timestamp(tmp_path: Path) -> None:
     report_path = tmp_path / "report.json"
+    local_tz = datetime.now().astimezone().tzinfo or timezone.utc
 
     write_governance_report(
         report_path,
         [],
         host="openclaw",
         signals=[],
-        generated_at=datetime(2026, 3, 18, 14, 0, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 3, 18, 14, 0, tzinfo=local_tz),
         checkpoint_state={
             "sequence": 1,
             "last_processed_at": "2026-03-18T10:00:00",

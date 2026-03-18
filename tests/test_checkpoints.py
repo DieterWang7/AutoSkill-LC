@@ -84,6 +84,7 @@ def test_filter_signals_for_incremental_run_uses_checkpoint_timestamp() -> None:
 
 
 def test_filter_signals_for_incremental_run_accepts_naive_checkpoint_timestamp() -> None:
+    local_tz = datetime.now().astimezone().tzinfo or timezone.utc
     previous_state = {
         "last_processed_at": "2026-03-18T12:00:00",
         "sequence": 3,
@@ -91,11 +92,11 @@ def test_filter_signals_for_incremental_run_accepts_naive_checkpoint_timestamp()
     signals = [
         ConversationSignal(
             topic="old",
-            last_observed_at=datetime(2026, 3, 18, 11, 0, tzinfo=timezone.utc),
+            last_observed_at=datetime(2026, 3, 18, 11, 0, tzinfo=local_tz),
         ),
         ConversationSignal(
             topic="new",
-            last_observed_at=datetime(2026, 3, 18, 13, 0, tzinfo=timezone.utc),
+            last_observed_at=datetime(2026, 3, 18, 13, 0, tzinfo=local_tz),
         ),
     ]
 
