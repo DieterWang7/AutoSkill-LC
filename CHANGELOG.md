@@ -26,6 +26,9 @@
 - OpenClaw plugin display now renders `report.display` instead of legacy shell logs
 - OpenClaw slash commands now fall back to `openclaw.json` when `pluginConfig`
   is missing from the command handler context, avoiding `spawnSync python ENOENT`
+- Report/checkpoint timestamp parsing now normalizes naive datetimes to UTC so
+  older `checkpoint.md` entries do not break maintenance with
+  `offset-naive and offset-aware` datetime errors
 
 ### Notes
 

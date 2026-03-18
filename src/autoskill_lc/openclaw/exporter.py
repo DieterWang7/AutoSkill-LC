@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from autoskill_lc.openclaw.config import OpenClawPaths
@@ -363,6 +363,8 @@ def _optional_timestamp(value: object) -> str | None:
         parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
     except ValueError:
         return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.isoformat()
 
 

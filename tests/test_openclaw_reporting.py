@@ -211,3 +211,22 @@ def test_write_governance_report_empty_recommendations(tmp_path: Path) -> None:
     assert payload["impossibleItems"] == []
     assert payload["display"]["identifiedExperiences"]["text"] == "本次识别出的经验：无"
     assert payload["display"]["governanceSuggestions"]["text"] == "治理建议：无"
+
+
+def test_write_governance_report_accepts_naive_checkpoint_timestamp(tmp_path: Path) -> None:
+    report_path = tmp_path / "report.json"
+
+    write_governance_report(
+        report_path,
+        [],
+        host="openclaw",
+        signals=[],
+        generated_at=datetime(2026, 3, 18, 14, 0, tzinfo=timezone.utc),
+        checkpoint_state={
+            "sequence": 1,
+            "last_processed_at": "2026-03-18T10:00:00",
+        },
+    )
+
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["summary"]["window"]["hoursSinceLastCheckpoint"] == 4.0

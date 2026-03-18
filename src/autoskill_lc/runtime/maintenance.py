@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from autoskill_lc.adapters.base import HostAdapter
 from autoskill_lc.core.engine import GovernanceEngine
@@ -43,6 +43,6 @@ def run_maintenance(
             host=adapter.name,
             signals=signals,
             recommendations=recommendations,
-            run_at=now or datetime.now(),
+            run_at=now or datetime.now(timezone.utc),
         )
     return recommendations

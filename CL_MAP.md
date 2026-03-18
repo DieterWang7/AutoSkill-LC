@@ -196,6 +196,20 @@ When syncing with upstream AutoSkill changes, review in this order:
 - keep this fallback during future upstream sync unless OpenClaw guarantees
   command-context config injection
 
+### 2026-03-18 UTC normalization for historical checkpoints
+
+- normalize naive ISO datetimes to UTC across report/checkpoint parsing
+- this preserves compatibility with older `checkpoint.md` entries written
+  before timezone handling was hardened
+- touched files:
+  - `src/autoskill_lc/core/reporting.py`
+  - `src/autoskill_lc/runtime/checkpoints.py`
+  - `src/autoskill_lc/runtime/maintenance.py`
+  - `src/autoskill_lc/openclaw/adapter.py`
+  - `src/autoskill_lc/codex/adapter.py`
+  - `src/autoskill_lc/openclaw/exporter.py`
+  - `src/autoskill_lc/codex/exporter.py`
+
 ## Naming rule
 
 - functional/runtime files must use English names
