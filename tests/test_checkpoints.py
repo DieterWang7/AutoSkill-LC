@@ -105,6 +105,28 @@ def test_filter_signals_for_incremental_run_accepts_naive_checkpoint_timestamp()
     assert [item.topic for item in filtered] == ["new"]
 
 
+def test_filter_signals_for_incremental_run_repairs_legacy_future_utc_timestamp() -> None:
+    local_tz = datetime.now().astimezone().tzinfo or timezone.utc
+    previous_state = {
+        "last_processed_at": "2026-03-18T09:39:00+00:00",
+        "sequence": 3,
+    }
+    signals = [
+        ConversationSignal(
+            topic="old",
+            last_observed_at=datetime(2026, 3, 18, 9, 30, tzinfo=local_tz),
+        ),
+        ConversationSignal(
+            topic="new",
+            last_observed_at=datetime(2026, 3, 18, 10, 0, tzinfo=local_tz),
+        ),
+    ]
+
+    filtered = filter_signals_for_incremental_run(signals, previous_state)
+
+    assert [item.topic for item in filtered] == ["new"]
+
+
 def test_read_checkpoint_state_returns_defaults_when_missing(tmp_path: Path) -> None:
     state = read_checkpoint_state(tmp_path / "checkpoint.md")
     assert state["sequence"] == 0

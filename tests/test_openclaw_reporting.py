@@ -231,3 +231,26 @@ def test_write_governance_report_accepts_naive_checkpoint_timestamp(tmp_path: Pa
 
     payload = json.loads(report_path.read_text(encoding="utf-8"))
     assert payload["summary"]["window"]["hoursSinceLastCheckpoint"] == 4.0
+
+
+def test_write_governance_report_repairs_legacy_future_utc_checkpoint_timestamp(
+    tmp_path: Path,
+) -> None:
+    report_path = tmp_path / "report.json"
+    local_tz = datetime.now().astimezone().tzinfo or timezone.utc
+    generated_at = datetime(2026, 3, 18, 10, 20, tzinfo=local_tz)
+
+    write_governance_report(
+        report_path,
+        [],
+        host="openclaw",
+        signals=[],
+        generated_at=generated_at,
+        checkpoint_state={
+            "sequence": 1,
+            "last_processed_at": "2026-03-18T09:39:00+00:00",
+        },
+    )
+
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["summary"]["window"]["hoursSinceLastCheckpoint"] == 0.7

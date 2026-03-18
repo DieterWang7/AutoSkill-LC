@@ -37,7 +37,11 @@ def filter_signals_for_incremental_run(
     signals: list[ConversationSignal],
     state: dict[str, object],
 ) -> list[ConversationSignal]:
-    last_processed = _parse_datetime(state.get("last_processed_at"))
+    reference = _latest_observed_at(signals) or datetime.now(timezone.utc)
+    last_processed = _repair_legacy_future_timestamp(
+        _parse_datetime(state.get("last_processed_at")),
+        reference,
+    )
     if last_processed is None:
         return signals
     filtered: list[ConversationSignal] = []
@@ -59,7 +63,10 @@ def write_checkpoint_entry(
     previous = read_checkpoint_state(checkpoint_path)
     sequence = int(previous.get("sequence", 0)) + 1
     next_sequence = f"{sequence:04d}"
-    previous_last_processed_at = _parse_datetime(previous.get("last_processed_at"))
+    previous_last_processed_at = _repair_legacy_future_timestamp(
+        _parse_datetime(previous.get("last_processed_at")),
+        run_at,
+    )
     last_processed_at = (
         _latest_observed_at(signals)
         or previous_last_processed_at
@@ -136,3 +143,16 @@ def _parse_datetime(value: object) -> datetime | None:
 
 def _local_timezone():
     return datetime.now().astimezone().tzinfo or timezone.utc
+
+
+def _repair_legacy_future_timestamp(
+    parsed: datetime | None,
+    reference: datetime,
+) -> datetime | None:
+    if parsed is None or parsed <= reference:
+        return parsed
+    local_tz = _local_timezone()
+    reinterpreted = parsed.replace(tzinfo=local_tz)
+    if reinterpreted <= reference:
+        return reinterpreted
+    return parsed

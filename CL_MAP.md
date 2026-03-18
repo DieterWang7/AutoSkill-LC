@@ -202,6 +202,8 @@ When syncing with upstream AutoSkill changes, review in this order:
   report/checkpoint parsing
 - this preserves compatibility with older `checkpoint.md` entries written
   before timezone handling was hardened and avoids negative window durations
+- also repair legacy watermarks that were mistakenly persisted with `+00:00`
+  while still representing local wall-clock time
 - touched files:
   - `src/autoskill_lc/core/reporting.py`
   - `src/autoskill_lc/runtime/checkpoints.py`

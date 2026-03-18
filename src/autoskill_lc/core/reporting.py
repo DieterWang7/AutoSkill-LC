@@ -247,7 +247,10 @@ def _build_window_summary(
     generated_at: datetime,
     checkpoint_state: dict[str, object],
 ) -> dict[str, object]:
-    last_checkpoint = _parse_datetime(checkpoint_state.get("last_processed_at"))
+    last_checkpoint = _repair_legacy_future_timestamp(
+        _parse_datetime(checkpoint_state.get("last_processed_at")),
+        generated_at,
+    )
     hours = 0.0
     if last_checkpoint is not None:
         hours = round((generated_at - last_checkpoint).total_seconds() / 3600, 1)
@@ -309,6 +312,19 @@ def _parse_datetime(value: object) -> datetime | None:
 
 def _local_timezone():
     return datetime.now().astimezone().tzinfo or timezone.utc
+
+
+def _repair_legacy_future_timestamp(
+    parsed: datetime | None,
+    reference: datetime,
+) -> datetime | None:
+    if parsed is None or parsed <= reference:
+        return parsed
+    local_tz = _local_timezone()
+    reinterpreted = parsed.replace(tzinfo=local_tz)
+    if reinterpreted <= reference:
+        return reinterpreted
+    return parsed
 
 
 def _summarize_actions(

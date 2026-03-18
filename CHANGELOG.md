@@ -30,6 +30,9 @@
   datetimes in the local host timezone so older `checkpoint.md` entries do not
   break maintenance with `offset-naive and offset-aware` datetime errors or
   produce negative window durations
+- Legacy checkpoint values that were accidentally written with a future-looking
+  `+00:00` offset are now reinterpreted as local wall-clock time when safe, so
+  incremental filtering and window summaries remain usable on upgraded hosts
 
 ### Notes
 
