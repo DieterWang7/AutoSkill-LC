@@ -71,6 +71,12 @@ especially:
 - `workspaceDir`
 - `reportName`
 
+If a slash-command runtime does not inject `pluginConfig` into the command
+handler context, the plugin now falls back to reading the same values from
+`~/.openclaw/openclaw.json`. This keeps `/autoskill-cl` and
+`/autoskill-maintain` working even when Gateway command context is thinner than
+Gateway method context.
+
 Example:
 
 ```json

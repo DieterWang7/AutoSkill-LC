@@ -187,6 +187,15 @@ When syncing with upstream AutoSkill changes, review in this order:
   - `workspace/logs/autoskill_cl_*.log`
   - and replace HEARTBEAT references with plugin-command guidance
 
+### 2026-03-18 OpenClaw command config fallback
+
+- `extensions/autoskill-lc-openclaw/index.js` now falls back to
+  `~/.openclaw/openclaw.json` when slash-command context omits `pluginConfig`
+- this is required because Gateway methods and slash-command handlers do not
+  always receive identical config payloads in production
+- keep this fallback during future upstream sync unless OpenClaw guarantees
+  command-context config injection
+
 ## Naming rule
 
 - functional/runtime files must use English names

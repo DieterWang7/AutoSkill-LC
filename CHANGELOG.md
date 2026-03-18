@@ -24,6 +24,8 @@
 - OpenClaw server safety guidance split into an independent external skill
 - Documentation updated for report v2, checkpoint tracking, and naming policy
 - OpenClaw plugin display now renders `report.display` instead of legacy shell logs
+- OpenClaw slash commands now fall back to `openclaw.json` when `pluginConfig`
+  is missing from the command handler context, avoiding `spawnSync python ENOENT`
 
 ### Notes
 

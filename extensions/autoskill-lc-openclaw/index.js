@@ -11,6 +11,30 @@ function resolveWorkspaceDir(config) {
   return raw.startsWith("~") ? path.join(os.homedir(), raw.slice(1)) : raw;
 }
 
+function loadConfiguredPluginEntry(workspaceDir) {
+  const payload = readJson(path.join(workspaceDir, "openclaw.json"));
+  const entry = payload?.plugins?.entries?.[PLUGIN_ID];
+  if (!entry || typeof entry !== "object") {
+    return {};
+  }
+  const config = entry.config;
+  return config && typeof config === "object" ? config : {};
+}
+
+function resolvePluginConfig(maybeConfig, runtimeCwd) {
+  const explicitConfig =
+    maybeConfig && typeof maybeConfig === "object" ? maybeConfig : {};
+  const fallbackWorkspaceDir = resolveWorkspaceDir({
+    workspaceDir:
+      explicitConfig.workspaceDir || runtimeCwd || path.join(os.homedir(), ".openclaw")
+  });
+  const diskConfig = loadConfiguredPluginEntry(fallbackWorkspaceDir);
+  return {
+    ...diskConfig,
+    ...explicitConfig
+  };
+}
+
 function resolveDataDir(config) {
   return path.join(resolveWorkspaceDir(config), "autoskill-lc");
 }
@@ -175,14 +199,16 @@ function formatMaintainText(config, result) {
 
 export default function register(api) {
   api.registerGatewayMethod(`${PLUGIN_ID}.status`, ({ pluginConfig, respond }) => {
-    respond(true, summarizeStatus(pluginConfig));
+    const resolvedConfig = resolvePluginConfig(pluginConfig);
+    respond(true, summarizeStatus(resolvedConfig));
   });
 
   api.registerCommand({
     name: "autoskill-status",
     description: "Show AutoSkill-LC OpenClaw plugin status",
     handler: (ctx) => {
-      const status = summarizeStatus(ctx.pluginConfig);
+      const config = resolvePluginConfig(ctx.pluginConfig, ctx.cwd);
+      const status = summarizeStatus(config);
       return {
         text: formatStatusText(status)
       };
@@ -193,9 +219,10 @@ export default function register(api) {
     name: "autoskill-maintain",
     description: "Run AutoSkill-LC maintenance via the Python CLI",
     handler: (ctx) => {
-      const workspaceDir = resolveWorkspaceDir(ctx.pluginConfig);
-      const reportName = ctx.pluginConfig?.reportName || DEFAULT_REPORT_NAME;
-      const result = runPythonCli(ctx.pluginConfig, [
+      const config = resolvePluginConfig(ctx.pluginConfig, ctx.cwd);
+      const workspaceDir = resolveWorkspaceDir(config);
+      const reportName = config?.reportName || DEFAULT_REPORT_NAME;
+      const result = runPythonCli(config, [
         "openclaw-maintain",
         "--workspace-dir",
         workspaceDir,
@@ -203,7 +230,7 @@ export default function register(api) {
         reportName
       ]);
       return {
-        text: formatMaintainText(ctx.pluginConfig, result)
+        text: formatMaintainText(config, result)
       };
     }
   });
@@ -212,9 +239,10 @@ export default function register(api) {
     name: "autoskill-cl",
     description: "Run AutoSkill-LC maintenance and display the governance summary",
     handler: (ctx) => {
-      const workspaceDir = resolveWorkspaceDir(ctx.pluginConfig);
-      const reportName = ctx.pluginConfig?.reportName || DEFAULT_REPORT_NAME;
-      const result = runPythonCli(ctx.pluginConfig, [
+      const config = resolvePluginConfig(ctx.pluginConfig, ctx.cwd);
+      const workspaceDir = resolveWorkspaceDir(config);
+      const reportName = config?.reportName || DEFAULT_REPORT_NAME;
+      const result = runPythonCli(config, [
         "openclaw-maintain",
         "--workspace-dir",
         workspaceDir,
@@ -222,7 +250,7 @@ export default function register(api) {
         reportName
       ]);
       return {
-        text: formatMaintainText(ctx.pluginConfig, result)
+        text: formatMaintainText(config, result)
       };
     }
   });
@@ -239,8 +267,9 @@ export default function register(api) {
         };
       }
 
-      const workspaceDir = resolveWorkspaceDir(ctx.pluginConfig);
-      const result = runPythonCli(ctx.pluginConfig, [
+      const config = resolvePluginConfig(ctx.pluginConfig, ctx.cwd);
+      const workspaceDir = resolveWorkspaceDir(config);
+      const result = runPythonCli(config, [
         "openclaw-ingest-export",
         "--workspace-dir",
         workspaceDir,
